@@ -18,3 +18,5 @@ divs = tree.xpath("//*[@class='c']")
 for j in divs:
 	for i in j.xpath('./*/text()'):
 		print i
+demo = divs[2].xpath('node()')
+
