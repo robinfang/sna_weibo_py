@@ -3,7 +3,7 @@
 
 """
 import urllib2
-from lxml import etree 
+from lxml import etree
 from StringIO import StringIO
 import lxml.html.soupparser as soupparser
 class WeiboPost(object):
@@ -15,19 +15,19 @@ class WeiboPost(object):
 		content: 字符串内容
 		repost_list: WeiboReply回复列表
 	"""
-	def __init__(self, mid, uid, post_time, content):
+	def __init__(self, mid=None, uid=None, post_time=None, content=None):
 		self.mid = mid
 		self.uid = uid
 		self.post_time = post_time
 		self.content = content
 class WeiboReply(object):
 	"""一条微博回复。
-	Attributes: 
+	Attributes:
 		user_url: 字符串用户链接
 		content: 用户转发内容
 		repost_time: 用户转发时间
 	"""
-	def __init__(self, user_url, content, repost_time):
+	def __init__(self, user_url=None, content=None, repost_time=None):
 		self.user_url = user_url
 		self.content = content
 		self.repost_time = repost_time
@@ -47,7 +47,14 @@ f.close()
 #	for i in j.xpath('./*/text()'):
 #		print i
 #demo = divs[2].xpath('node()')
-
 dom = soupparser.fromstring(data)
-
-
+divs = dom.xpath("//*[@class='c']")
+#weibo_post = WeiboPost()
+#weibo_post.repost_list = []
+for i in range(2,len(divs)):
+    weibo_reply = WeiboReply()
+    nodes  =  divs[i].xpath('node()')
+    weibo_reply.user_url = "weibo.cn%s" % nodes[0].get('href')
+    print weibo_reply.user_url
+    time_string = nodes[-1].text
+    print time_string
