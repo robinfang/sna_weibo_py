@@ -5,7 +5,9 @@
 import urllib2
 from lxml import etree
 from StringIO import StringIO
+import re
 import lxml.html.soupparser as soupparser
+import datetime
 class WeiboPost(object):
 	"""一条新浪微博。
 	Attributes:
@@ -32,7 +34,7 @@ class WeiboReply(object):
 		self.content = content
 		self.repost_time = repost_time
 mid = "zAjoQmY0n"
-gsid = "4uRR91f31V8gG7xcmM9k3703C8g"
+gsid = "4uwgb764149TppfO8K622703C8g"
 url = "http://weibo.cn/repost/"
 headers = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
 request = urllib2.Request("%s%s?&gsid=%s"%(url,mid,gsid),headers=headers)
@@ -49,12 +51,26 @@ f.close()
 #demo = divs[2].xpath('node()')
 dom = soupparser.fromstring(data)
 divs = dom.xpath("//*[@class='c']")
-#weibo_post = WeiboPost()
-#weibo_post.repost_list = []
-for i in range(2,len(divs)):
-    weibo_reply = WeiboReply()
+weibo_post = WeiboPost()
+weibo_post.repost_list = []
+for i in range(0,len(divs)):
     nodes  =  divs[i].xpath('node()')
-    weibo_reply.user_url = "weibo.cn%s" % nodes[0].get('href')
+    if len(nodes)==0:
+        continue
+    elif nodes[-1].tag!='span':
+        continue
+    weibo_reply = WeiboReply()
+    full_url_string = "weibo.cn%s" % nodes[0].get('href')
+    weibo_reply.user_url = full_url_string
+    weibo_reply.user_url = re.compile(r'(\S*)?\?').match(full_url_string).group(1)
     print weibo_reply.user_url
-    time_string = nodes[-1].text
+    time_string = re.compile(ur'(.*)\u6765.*').match(nodes[-1].text).group(1).strip()
     print time_string
+    time_string_split = time_string.split()
+    if len(time_string_split)==1:
+        minutes = re.compile(ur'(.*)\u5206.*').match(time_string_split[0]).group(1)
+        print minutes
+        weibo_reply.repost_time = datetime.datetime.today()\
+                +datetime.timedelta(minutes = 0-int(minutes))
+        print weibo_reply.repost_time
+        weibo_post.repost_list.append(weibo_reply)
