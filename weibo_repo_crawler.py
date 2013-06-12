@@ -25,14 +25,25 @@ class WeiboPost(object):
 class WeiboReply(object):
     """一条微博回复。
     Attributes:
-        user_url: 字符串用户链接
-        content: 用户转发内容
-        repost_time: 用户转发时间
+        user_url: 字符串用户链接。
+        content: 用户转发内容。
+        repost_time: 用户转发时间。
     """
     def __init__(self, user_url=None, content=None, repost_time=None):
         self.user_url = user_url
         self.content = content
         self.repost_time = repost_time
+
+def get_replys_list(url):
+    """取得一个页面内的回复。
+    Args:
+        url: 页面的链接，包含page参数
+    Returns: 
+        一个list，其中的元素为WeiboReply类的实例
+    """
+    list = []
+    
+    
 mid = "zAjoQmY0n"
 gsid = "4uwgb764149TppfO8K622703C8g"
 url = "http://weibo.cn/repost/"
