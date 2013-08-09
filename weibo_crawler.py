@@ -102,8 +102,8 @@ def getReplies(url):
     data = urllib2.urlopen(request).read()
     dom = soupparser.fromstring(data)
     divs = dom.xpath("//*[@class='c']")
-    #global gdivs
-    #gdivs = divs
+    global gdivs
+    gdivs = divs
     for i in range(0,len(divs)):
         nodes  =  divs[i].xpath('node()')
         if len(nodes)==0:
@@ -112,10 +112,11 @@ def getReplies(url):
             continue
         weibo_repost = WeiboRepost()
         for j in range(0,len(nodes)):
-            if isinstance(nodes[j],unicode):
+            if isinstance(nodes[j],(unicode,str)):
                 content = nodes[j]
-                print type(content)
-                print content
+                #print type(content)
+                print "content:",content
+                break
         full_url_string = "weibo.cn%s" % nodes[0].get('href')
         weibo_repost.user_url = full_url_string
         weibo_repost.user_url = re.compile(r'(\S*)?\?').match(full_url_string).group(1)
