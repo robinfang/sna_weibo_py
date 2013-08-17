@@ -43,7 +43,7 @@ class WeiboPost(object):
         self.user = user
         self.post_time = post_time
         self.content = content
-class WeiboReposti(object):
+class WeiboRepost(object):
     """一条微博回复。
     
     Attributes:
