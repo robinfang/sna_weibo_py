@@ -18,10 +18,9 @@ class User(object):
         age: 年龄
         tags: 标签
     """
-    def __init__(self, url = None, uid = None, following_number = None,\
+    def __init__(self, uid = None, following_number = None,\
             follower_number = None, sex = None, age = None,\
             tags = None):
-        self.url = url
         self.uid = uid
         self.following_number = following_number
         self.follower_number = follower_number
@@ -44,7 +43,7 @@ class WeiboPost(object):
         self.user = user
         self.post_time = post_time
         self.content = content
-class WeiboRepost:
+class WeiboReposti(object):
     """一条微博回复。
     
     Attributes:
@@ -59,7 +58,42 @@ class WeiboRepost:
         self.user = user
         self.from_user = from_user
 
+class Parser(object):
+    """
+
+    Attributes:
+        HEADERS: 请求头
+        GSID: 微博免登录参数
+    """
+    HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
+    GSID = "gsid=4uwgb764149TppfO8K622703C8g"
+
+class UserParser(Parser):
+    """
         
+    Attributes:
+        user_url: 用户链接
+    """
+    def __init__(self, user_url = None):
+        self.user_url = user_url
+    def getUser(self):
+        user = User()
+        url = self.user_url
+        request = urllib2.Request(url,headers = self.HEADERS)
+        data = urllib2.urlopen(request).read()
+        dom = soupparser.fromstring(data)
+        uidstr = dom.xpath("//span[@class='ctt'][1]/a")[0].get('href')
+        user.uid = uidstr.split('/')[1] #用户数字id
+        f = dom.xpath("//div[@class='tip2']/a") 
+        followingstr =  f[0].text
+        p = re.compile(ur'\S*\[(\d+)\]')
+        followingu = p.match(followingstr).group(1)
+        user.following_number = int(followingu) # 用户关注数  
+        followerstr = f[1].text
+        followeru = p.match(followerstr).group(1)
+        user.follower_number = int(followeru) # 用户粉丝数
+        print user.__dict__
+        return user 
 class WeiboParser:
     """页面分析器
     
@@ -115,10 +149,17 @@ def getReplies(url):
             if isinstance(nodes[j],(unicode,str)):
                 content = nodes[j]
                 #print type(content)
-                print "content:",content
+                #print "content:",content
+                weibo_repost.content = content
+                if content.endswith(u"//"):
+                   f = j+1
+                   from_url_string = nodes[f].get('href')
+                   weibo_repost.from_user_url = re.compile(r'http://(\S*)?\?').match(from_url_string).group(1)
+                   print "from_url: %s" % weibo_repost.from_user_url
                 break
+             
         full_url_string = "weibo.cn%s" % nodes[0].get('href')
-        weibo_repost.user_url = full_url_string
+
         weibo_repost.user_url = re.compile(r'(\S*)?\?').match(full_url_string).group(1)
         print "user url:" + weibo_repost.user_url
         time_string = re.compile(ur'(.*)\u6765.*').match(nodes[-1].text).group(1).strip()
@@ -167,7 +208,8 @@ def getReplies(url):
                     int(month),\
                     int(day),\
                     int(hour),int(minutes))
-        print "repost_time : %s"%weibo_repost.repost_time
+        print "repost_time: %s" % weibo_repost.repost_time
+        print "content: %s" % weibo_repost.content
         list.append(weibo_repost)
     return list
     
