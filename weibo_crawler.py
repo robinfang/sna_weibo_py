@@ -43,6 +43,7 @@ class WeiboPost(object):
         self.user = user
         self.post_time = post_time
         self.content = content
+
 class WeiboRepost(object):
     """一条微博回复。
     
@@ -74,12 +75,13 @@ class UserParser(Parser):
     Attributes:
         user_url: 用户链接
     """
-    def __init__(self, user_url = None):
+    def __init__(self, user_url):
         self.user_url = user_url
     def getUser(self):
         user = User()
-        url = self.user_url
-        request = urllib2.Request(url,headers = self.HEADERS)
+        url = "%s?%s" % (self.user_url, self.GSID)
+        print url
+        request = urllib2.Request(url, headers = self.HEADERS)
         data = urllib2.urlopen(request).read()
         dom = soupparser.fromstring(data)
         uidstr = dom.xpath("//span[@class='ctt'][1]/a")[0].get('href')
@@ -94,29 +96,32 @@ class UserParser(Parser):
         user.follower_number = int(followeru) # 用户粉丝数
         print user.__dict__
         return user 
-class WeiboParser:
-    """页面分析器
+
+class WeiboParser(Parser):
+    """
     
     Attributes： 
-        headers: 请求头
-        url: 链接
-        state: 状态
-        pages_number: 一共有多少页
-        repost_list: 转发列表
+        weibo_url: 链接
     """
-    headers = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
-    def __init__(self, url):
-        self.state = "init"
-        self.url = url
-    def parseOnePage(self):
-        """解析一个页面
+    def __init__(self, weibo_url):
+        self.weibo_url = weibo_url
+    def getWeiboPost(self):
+        """解析
         """
-        list = []
-        request = urllib2.Request(url,headers = headers)
+        weibopost = WeiboPost()
+        url = "%s?%s" % (self.weibo_url, self.GSID)
+        # mid
+        weibopost.mid =  re.compile("\S*repost/(\S+)\?").match(url).group(1)
+        request = urllib2.Request(url, headers = headers)
         data = urllib2.urlopen(request).read()
         dom = soupparser.fromstring(data)
-     
+        div = dom.xpath("//div[id='M_']")[0] 
+        user_url = "weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
+        userparser = UserParser(user_url)
+        weibopost.user = userparser.getUser() # 微博发布用户
         
+        print weibopost.__dict__ 
+        return weibopost
 def getRepostList(url):
     """
     """
