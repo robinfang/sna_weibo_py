@@ -33,7 +33,7 @@ class WeiboPost(object):
     
     Attributes:
         mid: 字符串，微博的mid，形如zAjoQmY0n
-        user: 字符串发布者
+        user: 发布者
         post_time: 发布时间
         content: 字符串内容
         repost_list: WeiboReply回复列表
@@ -68,7 +68,53 @@ class Parser(object):
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
     GSID = "gsid=4uwgb764149TppfO8K622703C8g"
-
+    def url2Dom(self, url):
+        request = urllib2.Request(url, headers = self.HEADERS)
+        data = urllib2.urlopen(request).read()
+        dom = soupparser.fromstring(data)
+        return dom
+    def parserTime(self, time_string):
+        time_string_split = time_string.split()
+        match_ymd = re.compile(ur'(\d{4})-(\d{2})-(\d{2})').match(time_string_split[0])
+        if len(time_string_split):
+            print "case1: xx ago"
+            minutes = re.compile(ur'(.*)\u5206.*').match(time_string_split[0]).group(1) # 取得转发距现在过去了几分钟
+            time = datetime.datetime.today()\
+                +datetime.timedelta(minutes = 0-int(minutes)) # 时间赋值
+        elif u'\u4eca\u5929' in time_string_split:
+            print "case2: today xxx"
+            time = time_string_split[1] # 取得转发时间HH:mm
+            hour,minutes = time.split(":")
+            today = datetime.date.today()
+            time = datetime.datetime(today.year,\
+                today.month,\
+                today.day,\
+                int(hour),int(minutes))
+        elif u'\u6708' in time_string_split[0] and u'\u65e5' in time_string_split[0]:
+            print "case3: xx (Month) xx (Day)"
+            date_string = time_string_split[0]
+            match = re.compile(ur'(\d{2}).*(\d{2}).*').match(date_string)
+            today = datetime.date.today()
+            month = match.group(1)
+            day = match.group(2)
+            time = time_string_split[1]
+            hour,minutes = time.split(":")
+            time = datetime.datetime(today.year,\
+                    int(month),\
+                    int(day),\
+                    int(hour),int(minutes))
+       elif match_ymd != None:
+           print "case4: xxxx-xx-xx xx:xx:xx"
+            year = match_ymd.group(1)
+            month = match_ymd.group(2)
+            day = match_ymd.group(3)
+            ltime = time_string_split[1]
+            hour,minutes,_ = ltime.split(":")
+            time = datetime.datetime(int(year),\
+                    int(month),\
+                    int(day),\
+                    int(hour),int(minutes))
+        return time
 class UserParser(Parser):
     """
         
@@ -110,18 +156,26 @@ class WeiboParser(Parser):
         """
         weibopost = WeiboPost()
         url = "%s?%s" % (self.weibo_url, self.GSID)
-        # mid
+        # 微博mid
         weibopost.mid =  re.compile("\S*repost/(\S+)\?").match(url).group(1)
         request = urllib2.Request(url, headers = headers)
         data = urllib2.urlopen(request).read()
         dom = soupparser.fromstring(data)
-        div = dom.xpath("//div[id='M_']")[0] 
-        user_url = "weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
+        div = dom.xpath("//div[@id='M_']")[0] 
+        user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
         userparser = UserParser(user_url)
-        weibopost.user = userparser.getUser() # 微博发布用户
-        
+        weibopost.user = userparser.getUser() # 微博发布者
+        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath("node()")
+        strlist = []
+        for cj in contentlist:
+            if isinstance(cj,(unicode,str)):
+                strlist.append(cj)
+        weibopost.content = "".join(strlist) # 微博内容
+        time_string =  div.xpath("*//span[@class='ct']")[0].text
+        weibopost.post_time = self.parserTime(time_string) # 微博发布时间
         print weibopost.__dict__ 
         return weibopost
+
 def getRepostList(url):
     """
     """
