@@ -103,8 +103,8 @@ class Parser(object):
                     int(month),\
                     int(day),\
                     int(hour),int(minutes))
-       elif match_ymd != None:
-           print "case4: xxxx-xx-xx xx:xx:xx"
+        elif match_ymd != None:
+            print "case4: xxxx-xx-xx xx:xx:xx"
             year = match_ymd.group(1)
             month = match_ymd.group(2)
             day = match_ymd.group(3)
@@ -158,9 +158,7 @@ class WeiboParser(Parser):
         url = "%s?%s" % (self.weibo_url, self.GSID)
         # 微博mid
         weibopost.mid =  re.compile("\S*repost/(\S+)\?").match(url).group(1)
-        request = urllib2.Request(url, headers = headers)
-        data = urllib2.urlopen(request).read()
-        dom = soupparser.fromstring(data)
+        dom = self.url2Dom(url)
         div = dom.xpath("//div[@id='M_']")[0] 
         user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
         userparser = UserParser(user_url)
