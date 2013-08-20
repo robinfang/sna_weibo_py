@@ -73,7 +73,7 @@ class Parser(object):
         data = urllib2.urlopen(request).read()
         dom = soupparser.fromstring(data)
         return dom
-    def parserTime(self, time_string):
+    def parseTime(self, time_string):
         time_string_split = time_string.split()
         match_ymd = re.compile(ur'(\d{4})-(\d{2})-(\d{2})').match(time_string_split[0])
         if len(time_string_split):
@@ -127,9 +127,7 @@ class UserParser(Parser):
         user = User()
         url = "%s?%s" % (self.user_url, self.GSID)
         print url
-        request = urllib2.Request(url, headers = self.HEADERS)
-        data = urllib2.urlopen(request).read()
-        dom = soupparser.fromstring(data)
+        dom = self.url2Dom(url)
         uidstr = dom.xpath("//span[@class='ctt'][1]/a")[0].get('href')
         user.uid = uidstr.split('/')[1] #用户数字id
         f = dom.xpath("//div[@class='tip2']/a") 
@@ -157,7 +155,7 @@ class WeiboParser(Parser):
         weibopost = WeiboPost()
         url = "%s?%s" % (self.weibo_url, self.GSID)
         # 微博mid
-        weibopost.mid =  re.compile("\S*repost/(\S+)\?").match(url).group(1)
+        weibopost.mid =  re.compile(r"\S*repost/(\S+)\?").match(url).group(1)
         dom = self.url2Dom(url)
         div = dom.xpath("//div[@id='M_']")[0] 
         user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
@@ -170,9 +168,36 @@ class WeiboParser(Parser):
                 strlist.append(cj)
         weibopost.content = "".join(strlist) # 微博内容
         time_string =  div.xpath("*//span[@class='ct']")[0].text
-        weibopost.post_time = self.parserTime(time_string) # 微博发布时间
+        weibopost.post_time = self.parseTime(time_string) # 微博发布时间
+        repost_list = self._getReposts(url)
         print weibopost.__dict__ 
         return weibopost
+    def _getReposts(self, url):
+        """
+
+        """
+        repost_list = []
+        lastpage = self._getTotalPage(url)
+        print "lastpage: %d" % lastpage
+        i = lastpage
+        j = 1
+        while i != 1:
+            full_url = url + "&page=" + i
+            print "full_url: %d" % full_url
+            one_page = self._parseRepost(full_url)
+            repost_list.extent(one_page)
+            lastpage = self._getTotalPage(url)
+            i = lastpage - j
+            j += 1
+        return repost_list
+    def _getTotalPage(self, url):
+        dom = self.url2Dom(url)
+        page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
+        # 注意，此处并未考虑转发不足一页的情况
+        page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
+        return page_number
+    def _parseRepost(self, url):
+         dom = self.url2Dom(url)
 
 def getRepostList(url):
     """
