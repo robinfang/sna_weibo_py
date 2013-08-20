@@ -173,6 +173,7 @@ class WeiboParser(Parser):
         time_string =  div.xpath("*//span[@class='ct']")[0].text
         weibopost.post_time = self.parseTime(time_string) # 微博发布时间
         repost_list = self._getReposts(url)
+        weibopost.repost_list = repost_list # repost_list
         print weibopost.__dict__ 
         return weibopost
     def _getReposts(self, url):
@@ -225,7 +226,7 @@ class WeiboParser(Parser):
                         f = j + 1
                         from_full_url = nodes[f].get("href") # 取得转发来源用户完整url
                         from_user_url = from_full_url.split("?")[0] # 取得转发
-                        userparse = UserParser(from_user_url)
+                        userparser = UserParser(from_user_url)
                         weibo_repost.from_user = userparser.getUser() # 转发来源
                     break
             time_string = re.compile(ur'(.*)\u6765.*').match(nodes[-1].text).group(1).strip()
