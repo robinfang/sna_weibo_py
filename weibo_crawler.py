@@ -67,7 +67,8 @@ class Parser(object):
         GSID: 微博免登录参数
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
-    GSID = "gsid=4uwgb764149TppfO8K622703C8g"
+    GSID = "st=f17a&gsid=4u8p32bd1TPK1AXgrkUqT703C8g&vt=4"
+    #GSID = "gsid=4u8p32bd1TPK1AXgrkUqT703C8g"
     def url2Dom(self, url):
         request = urllib2.Request(url, headers = self.HEADERS)
         data = urllib2.urlopen(request).read()
@@ -75,8 +76,9 @@ class Parser(object):
         return dom
     def parseTime(self, time_string):
         time_string_split = time_string.split()
+        print "time_string: %s" % time_string
         match_ymd = re.compile(ur'(\d{4})-(\d{2})-(\d{2})').match(time_string_split[0])
-        if len(time_string_split):
+        if len(time_string_split) == 1:
             print "case1: xx ago"
             minutes = re.compile(ur'(.*)\u5206.*').match(time_string_split[0]).group(1) # 取得转发距现在过去了几分钟
             time = datetime.datetime.today()\
@@ -128,7 +130,7 @@ class UserParser(Parser):
         url = "%s?%s" % (self.user_url, self.GSID)
         print url
         dom = self.url2Dom(url)
-        uidstr = dom.xpath("//span[@class='ctt'][1]/a")[0].get('href')
+        uidstr = dom.xpath("//div[@class='tip2']/a")[0].get('href')
         user.uid = uidstr.split('/')[1] #用户数字id
         f = dom.xpath("//div[@class='tip2']/a") 
         followingstr =  f[0].text
@@ -159,6 +161,7 @@ class WeiboParser(Parser):
         dom = self.url2Dom(url)
         div = dom.xpath("//div[@id='M_']")[0] 
         user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
+        print "user_url: %s" % user_url
         userparser = UserParser(user_url)
         weibopost.user = userparser.getUser() # 微博发布者
         contentlist = div.xpath("*//span[@class='ctt']")[0].xpath("node()")
@@ -182,10 +185,11 @@ class WeiboParser(Parser):
         i = lastpage
         j = 1
         while i != 1:
-            full_url = url + "&page=" + i
-            print "full_url: %d" % full_url
+            print "    j: %d" % j
+            full_url = "%s&page=%d" % (url,i)
+            print "full_url: %s" % full_url
             one_page = self._parseRepost(full_url)
-            repost_list.extent(one_page)
+            repost_list.extend(one_page)
             lastpage = self._getTotalPage(url)
             i = lastpage - j
             j += 1
@@ -197,8 +201,37 @@ class WeiboParser(Parser):
         page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
         return page_number
     def _parseRepost(self, url):
-         dom = self.url2Dom(url)
-
+        reposts = []
+        dom = self.url2Dom(url)
+        divs = dom.xpath("//div[@class='c']")
+        for i in range(0, len(divs)):
+            nodes = divs[i].xpath("node()") # 一个nodes对应一行内容
+            # 过滤掉两个不是回复的
+            if len(nodes) == 0:
+                continue
+            elif nodes[-1].tag != 'span':
+                continue
+            weibo_repost = WeiboRepost()
+            full_url_string = "http://weibo.cn%s" % nodes[0].get('href')
+            user_url = full_url_string.split("?")[0]
+            userparser = UserParser(user_url)
+            weibo_repost.user = userparser.getUser() # 发布者
+            # 从一行中遍历出内容和转发来源
+            for j in range(0, len(nodes)):
+                if isinstance(nodes[j],(unicode,str)):
+                    content = nodes[j]
+                    weibo_repost.content = content # 转发评论的内容
+                    if content.endswith(u"//"):
+                        f = j + 1
+                        from_full_url = nodes[f].get("href") # 取得转发来源用户完整url
+                        from_user_url = from_full_url.split("?")[0] # 取得转发
+                        userparse = UserParser(from_user_url)
+                        weibo_repost.from_user = userparser.getUser() # 转发来源
+                    break
+            time_string = re.compile(ur'(.*)\u6765.*').match(nodes[-1].text).group(1).strip()
+            weibo_repost.time = self.parseTime(time_string) # 转发时间
+            reposts.append(weibo_repost)
+        return reposts
 def getRepostList(url):
     """
     """
@@ -296,5 +329,5 @@ def getReplies(url):
     return list
     
 if __name__ == "__main__":
-    getReplies("http://weibo.cn/repost/yci8hkTUf?&gsid=4uwgb764149TppfO8K622703C8g&page=1&st=df7e")
- 
+    wp = WeiboParser("http://weibo.cn/repost/A5CPSEH0r")
+    weibopost = wp.getWeiboPost()
