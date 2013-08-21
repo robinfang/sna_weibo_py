@@ -70,7 +70,7 @@ class Parser(object):
         GSID: 微博免登录参数
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
-    GSID = "st=f17a&gsid=4u8p32bd1TPK1AXgrkUqT703C8g&vt=4"
+    GSID = "rl=0&vt=4&gsid=4u8p32bd1TPK1AXgrkUqT703C8g&st=1139"
     #GSID = "gsid=4u8p32bd1TPK1AXgrkUqT703C8g"
     def url2Dom(self, url):
         request = urllib2.Request(url, headers = self.HEADERS)
@@ -225,7 +225,7 @@ class WeiboParser(Parser):
             # 从一行中遍历出内容和转发来源
             for j in range(0, len(nodes)):
                 if isinstance(nodes[j],(unicode,str)):
-                    content = nodes[j]
+                    content = unicode(nodes[j])
                     weibo_repost.content = content # 转发评论的内容
                     if content.endswith(u"//"):
                         f = j + 1
@@ -239,102 +239,7 @@ class WeiboParser(Parser):
             weibo_repost.time = self.parseTime(time_string) # 转发时间
             reposts.append(weibo_repost)
         return reposts
-def getRepostList(url):
-    """
-    """
-        
-        
-def getReplies(url):
-    """以list形式通过url取得一个页面内的回复。
-    
-    Args:
-        url: 页面的链接字符串，包含page参数、gsid、mid等，形如：http://weibo.cn/repost/yci8hkTUf?&gsid=4uwgb764149TppfO8K622703C8g&page=2
-    Returns: 
-        一个list，其中的元素为WeiboReply类的实例
-    """
-    list = []
-    headers = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
-    request = urllib2.Request(url,headers = headers)
-    data = urllib2.urlopen(request).read()
-    dom = soupparser.fromstring(data)
-    divs = dom.xpath("//*[@class='c']")
-    global gdivs
-    gdivs = divs
-    for i in range(0,len(divs)):
-        nodes  =  divs[i].xpath('node()')
-        if len(nodes)==0:
-            continue
-        elif nodes[-1].tag!='span':
-            continue
-        weibo_repost = WeiboRepost()
-        for j in range(0,len(nodes)):
-            if isinstance(nodes[j],(unicode,str)):
-                content = nodes[j]
-                #print type(content)
-                #print "content:",content
-                weibo_repost.content = content
-                if content.endswith(u"//"):
-                   f = j+1
-                   from_url_string = nodes[f].get('href')
-                   weibo_repost.from_user_url = re.compile(r'http://(\S*)?\?').match(from_url_string).group(1)
-                   print "from_url: %s" % weibo_repost.from_user_url
-                break
-             
-        full_url_string = "weibo.cn%s" % nodes[0].get('href')
 
-        weibo_repost.user_url = re.compile(r'(\S*)?\?').match(full_url_string).group(1)
-        print "user url:" + weibo_repost.user_url
-        time_string = re.compile(ur'(.*)\u6765.*').match(nodes[-1].text).group(1).strip()
-        print "time string:" + time_string
-        time_string_split = time_string.split()
-        match_ymd = re.compile(ur'(\d{4})-(\d{2})-(\d{2})').match(time_string_split[0])
-        if len(time_string_split)==1:
-            print "case1"
-            minutes = re.compile(ur'(.*)\u5206.*').match(time_string_split[0]).group(1)    #取得转发距现在过去了几分钟
-            #print minutes
-            weibo_repost.repost_time = datetime.datetime.today()\
-                    +datetime.timedelta(minutes = 0-int(minutes))
-
-        elif u'\u4eca\u5929' in time_string_split:
-            print "case2"
-            time = time_string_split[1]    #取得转发时间HH:mm
-            hour,minutes = time.split(":")
-            today = datetime.date.today()
-            weibo_repost.repost_time = datetime.datetime(today.year,\
-                    today.month,\
-                    today.day,\
-                    int(hour),int(minutes))
-        elif u'\u6708' in time_string_split[0] and u'\u65e5' in time_string_split[0]:
-            print "case3"
-            date_string = time_string_split[0]
-            match = re.compile(ur'(\d{2}).*(\d{2}).*').match(date_string)
-            today = datetime.date.today()
-            month = match.group(1)
-            day = match.group(2)
-            time = time_string_split[1]
-            hour,minutes = time.split(":")
-            #print "nomth,day : %s, %s "% (month,day)
-            weibo_repost.repost_time = datetime.datetime(today.year,\
-                    int(month),\
-                    int(day),\
-                    int(hour),int(minutes))
-        elif match_ymd!=None:
-            print "case4"
-            year = match_ymd.group(1)
-            month = match_ymd.group(2)
-            day = match_ymd.group(3)
-            #print "year-month-day:%s,%s,%s"%(year,month,day)
-            time = time_string_split[1]
-            hour,minutes,_ = time.split(":")
-            weibo_repost.repost_time = datetime.datetime(int(year),\
-                    int(month),\
-                    int(day),\
-                    int(hour),int(minutes))
-        print "repost_time: %s" % weibo_repost.repost_time
-        print "content: %s" % weibo_repost.content
-        list.append(weibo_repost)
-    return list
-    
 if __name__ == "__main__":
     wp = WeiboParser("http://weibo.cn/repost/A5CPSEH0r")
     weibopost = wp.getWeiboPost()
