@@ -38,6 +38,7 @@ class WeiboPost(object):
         content: 字符串内容
         repost_list: WeiboReply回复列表
         user_url: 转发者url
+        user_sname: 用户显示昵称
     """
     def __init__(self, mid = None, user = None, post_time = None, content = None):
         self.mid = mid
@@ -55,6 +56,8 @@ class WeiboRepost(object):
         from_user: 转发来源
         user_url: 转发者链接
         from_user_url: 转发来源url
+        user_sname: 转发用户昵称
+        from_user_sname: 来源用户昵称
     """
     def __init__(self, content = None, time = None, user = None, from_user = None):
         self.content = content
@@ -70,7 +73,7 @@ class Parser(object):
         GSID: 微博免登录参数
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
-    GSID = "rl=0&vt=4&gsid=4u8p32bd1TPK1AXgrkUqT703C8g&st=1139"
+    GSID = "rl=0&gsid=4uUe32bd1rIuhRvgxOUSg9IF08T&st=7c7b"
     #GSID = "gsid=4u8p32bd1TPK1AXgrkUqT703C8g"
     def url2Dom(self, url):
         request = urllib2.Request(url, headers = self.HEADERS)
@@ -164,6 +167,8 @@ class WeiboParser(Parser):
         dom = self.url2Dom(url)
         div = dom.xpath("//div[@id='M_']")[0] 
         user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
+        user_sname = div.xpath("*/a")[0].text
+        weibopost.user_sname = user_sname # 微博发布者昵称
         print "user_url: %s" % user_url
         #userparser = UserParser(user_url)
         #weibopost.user = userparser.getUser() # 微博发布者
@@ -184,6 +189,7 @@ class WeiboParser(Parser):
         """
 
         """
+        global repost_list 
         repost_list = []
         lastpage = self._getTotalPage(url)
         print "lastpage: %d" % lastpage
@@ -220,6 +226,8 @@ class WeiboParser(Parser):
             full_url_string = "http://weibo.cn%s" % nodes[0].get('href')
             user_url = full_url_string.split("?")[0]
             weibo_repost.user_url = user_url # 转发者url
+            user_sname = nodes[0].text # 转发者昵称
+            weibo_repost.user_sname = user_sname
             #userparser = UserParser(user_url)
             #weibo_repost.user = userparser.getUser() # 发布者
             # 从一行中遍历出内容和转发来源
@@ -228,12 +236,15 @@ class WeiboParser(Parser):
                     content = unicode(nodes[j])
                     weibo_repost.content = content # 转发评论的内容
                     if content.endswith(u"//"):
-                        f = j + 1
+                        f = j + 1 
+                        # 这里如果出现内容以//结尾但是没有转发来源的会出现问题
                         from_full_url = nodes[f].get("href") # 取得转发来源用户完整url
                         from_user_url = from_full_url.split("?")[0] # 取得转发者链接
                         #userparser = UserParser(from_user_url)
                         #weibo_repost.from_user = userparser.getUser() # 转发来源
                         weibo_repost.from_user_url = from_user_url
+                        from_user_sname = nodes[f].text
+                        weibo_repost.from_user_sname = from_user_sname # 转发来源昵称
                     break
             time_string = re.compile(ur'(.*)\u6765.*').match(nodes[-1].text).group(1).strip()
             weibo_repost.time = self.parseTime(time_string) # 转发时间
@@ -241,5 +252,5 @@ class WeiboParser(Parser):
         return reposts
 
 if __name__ == "__main__":
-    wp = WeiboParser("http://weibo.cn/repost/A5CPSEH0r")
+    wp = WeiboParser("http://weibo.cn/repost/A5TKXcmjv")
     weibopost = wp.getWeiboPost()
