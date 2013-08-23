@@ -5,6 +5,7 @@ from StringIO import StringIO
 import re
 import lxml.html.soupparser as soupparser
 import datetime
+import time
 
 class User(object):
     """微博用户
@@ -73,7 +74,7 @@ class Parser(object):
         GSID: 微博免登录参数
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
-    GSID = "rl=0&gsid=4uUe32bd1rIuhRvgxOUSg9IF08T&st=7c7b"
+    GSID = "rl=0&gsid=4u4G32bd1nyjaD6mmCeg89IF08T&st=7c7b"
     #GSID = "gsid=4u8p32bd1TPK1AXgrkUqT703C8g"
     def url2Dom(self, url):
         request = urllib2.Request(url, headers = self.HEADERS)
@@ -243,7 +244,7 @@ class WeiboParser(Parser):
                         #userparser = UserParser(from_user_url)
                         #weibo_repost.from_user = userparser.getUser() # 转发来源
                         weibo_repost.from_user_url = from_user_url
-                        from_user_sname = nodes[f].text
+                        from_user_sname = nodes[f].text.lstrip("@") # 需去除'@'符号
                         weibo_repost.from_user_sname = from_user_sname # 转发来源昵称
                     break
             time_string = re.compile(ur'(.*)\u6765.*').match(nodes[-1].text).group(1).strip()
@@ -252,5 +253,5 @@ class WeiboParser(Parser):
         return reposts
 
 if __name__ == "__main__":
-    wp = WeiboParser("http://weibo.cn/repost/A5TKXcmjv")
+    wp = WeiboParser("http://weibo.cn/repost/A5Sltp22I")
     weibopost = wp.getWeiboPost()
