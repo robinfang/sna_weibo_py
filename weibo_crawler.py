@@ -253,5 +253,5 @@ class WeiboParser(Parser):
         return reposts
 
 if __name__ == "__main__":
-    wp = WeiboParser("http://weibo.cn/repost/A5Sltp22I")
+    wp = WeiboParser("http://weibo.cn/repost/A5R81buJP")
     weibopost = wp.getWeiboPost()
