@@ -74,7 +74,7 @@ class Parser(object):
         GSID: 微博免登录参数
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
-    GSID = "rl=0&gsid=4u4G32bd1nyjaD6mmCeg89IF08T&st=7c7b"
+    GSID = "rl=0&gsid=4u8p32bd1TPK1AXgrkUqT703C8g&st=7c7b"
     #GSID = "gsid=4u8p32bd1TPK1AXgrkUqT703C8g"
     def url2Dom(self, url):
         request = urllib2.Request(url, headers = self.HEADERS)
@@ -223,6 +223,9 @@ class WeiboParser(Parser):
                 continue
             elif nodes[-1].tag != 'span':
                 continue
+            # 取得一行内容文本
+            a_line = "".join(divs[i].xpath("text()"))
+            text_list.append(a_line)
             weibo_repost = WeiboRepost()
             full_url_string = "http://weibo.cn%s" % nodes[0].get('href')
             user_url = full_url_string.split("?")[0]
@@ -253,5 +256,7 @@ class WeiboParser(Parser):
         return reposts
 
 if __name__ == "__main__":
-    wp = WeiboParser("http://weibo.cn/repost/A5R81buJP")
+    wp = WeiboParser("http://weibo.cn/repost/A6lkV07ci")
+    global text_list
+    text_list = []
     weibopost = wp.getWeiboPost()
