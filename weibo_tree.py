@@ -54,11 +54,15 @@ def findSub(name, all_rel):
 def genTree(name, all_dict, all_rel):
     # pdb.set_trace()
     tree = {}
-    tree = all_dict[name]
+    if  not name in all_dict.keys():
+        return None
+    tree = all_dict.pop(name)
     subnodes = findSub(tree["name"], all_rel) 
     while len(subnodes) > 0:
         snode = subnodes.pop()
-        tree["children"].append(genTree(snode, all_dict, all_rel))
+        stree = genTree(snode, all_dict, all_rel)
+        if stree != None:
+            tree["children"].append(stree)
     return tree
 
 def findCircular(tree, visited):
@@ -82,7 +86,7 @@ if __name__ == "__main__":
     tree = genTree("origin", all_dict, all_rel)
     print (len(all_rel))
     visited = []
-    findCircular(tree, visited)
+    # findCircular(tree, visited)
     f = open("json","w")
     json_str = json.dumps(tree)
     f.write(json_str)

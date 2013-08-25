@@ -28,7 +28,7 @@ a {
 }
 
 #container {
-    width: 1000px;
+    width: 1200px;
     height: 700px;
     margin:0 auto;
 
@@ -37,7 +37,7 @@ a {
 #left-container, 
 #right-container, 
 #center-container {
-    width: 1000px; 
+    width: 1200px; 
     height: 700px;
    
     top:0;
@@ -73,7 +73,7 @@ a {
 }
 
 #center-container {
-    width:1000px;
+    width:1200px;
     left:200px;
     background-color:#1a1a1a;
     color:#ccc;
