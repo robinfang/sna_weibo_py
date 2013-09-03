@@ -71,11 +71,16 @@ class Parser(object):
 
     Attributes:
         HEADERS: 请求头
-        GSID: 微博免登录参数
+        gsid: 微博免登录参数
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
-    GSID = "rl=0&gsid=4u8p32bd1TPK1AXgrkUqT703C8g&st=7c7b"
-    #GSID = "gsid=4u8p32bd1TPK1AXgrkUqT703C8g"
+    gsid = ""
+    gsidstack = ["gsid=4um81d481ws9jVfW65fHRfNr36t",\
+            "gsid=4ukd1d481tNHjEDK1cdd5fO7L2W",\
+            "gsid=4u8p32bd1TPK1AXgrkUqT703C8g",\
+            "gsid=4u2g32bd14l1bYh2F0pMG9IF08T"]
+    def popGsid(self):
+        self.gsid = self.gsidstack.pop()
     def url2Dom(self, url):
         request = urllib2.Request(url, headers = self.HEADERS)
         data = urllib2.urlopen(request).read()
@@ -131,10 +136,11 @@ class UserParser(Parser):
         user_url: 用户链接
     """
     def __init__(self, user_url):
+        self.popGsid()
         self.user_url = user_url
     def getUser(self):
         user = User()
-        url = "%s?%s" % (self.user_url, self.GSID)
+        url = "%s?%s" % (self.user_url, self.gsid)
         print url
         dom = self.url2Dom(url)
         uidstr = dom.xpath("//div[@class='tip2']/a")[0].get('href')
@@ -157,12 +163,13 @@ class WeiboParser(Parser):
         weibo_url: 链接
     """
     def __init__(self, weibo_url):
+        self.popGsid()
         self.weibo_url = weibo_url
     def getWeiboPost(self):
         """解析
         """
         weibopost = WeiboPost()
-        url = "%s?%s" % (self.weibo_url, self.GSID)
+        url = "%s?%s" % (self.weibo_url, self.gsid)
         # 微博mid
         weibopost.mid =  re.compile(r"\S*repost/(\S+)\?").match(url).group(1)
         dom = self.url2Dom(url)
@@ -197,6 +204,11 @@ class WeiboParser(Parser):
         i = lastpage
         j = 1
         while i != 0:
+            if i%200 == 0:
+                try: 
+                    self.popGsid()
+                except:
+                    print "No more gsid!"
             print "    j: %d" % j
             full_url = "%s&page=%d" % (url,i)
             print "full_url: %s" % full_url
