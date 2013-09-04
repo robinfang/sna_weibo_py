@@ -88,15 +88,15 @@ class Parser(object):
         return dom
     def parseTime(self, time_string):
         time_string_split = time_string.split()
-        print "time_string: %s" % time_string
+        # print "time_string: %s" % time_string
         match_ymd = re.compile(ur'(\d{4})-(\d{2})-(\d{2})').match(time_string_split[0])
         if len(time_string_split) == 1:
-            print "case1: xx ago"
+            # print "case1: xx ago"
             minutes = re.compile(ur'(.*)\u5206.*').match(time_string_split[0]).group(1) # 取得转发距现在过去了几分钟
             time = datetime.datetime.today()\
                 +datetime.timedelta(minutes = 0-int(minutes)) # 时间赋值
         elif u'\u4eca\u5929' in time_string_split:
-            print "case2: today xxx"
+            # print "case2: today xxx"
             time = time_string_split[1] # 取得转发时间HH:mm
             hour,minutes = time.split(":")
             today = datetime.date.today()
@@ -105,7 +105,7 @@ class Parser(object):
                 today.day,\
                 int(hour),int(minutes))
         elif u'\u6708' in time_string_split[0] and u'\u65e5' in time_string_split[0]:
-            print "case3: xx (Month) xx (Day)"
+            # print "case3: xx (Month) xx (Day)"
             date_string = time_string_split[0]
             match = re.compile(ur'(\d{2}).*(\d{2}).*').match(date_string)
             today = datetime.date.today()
@@ -118,7 +118,7 @@ class Parser(object):
                     int(day),\
                     int(hour),int(minutes))
         elif match_ymd != None:
-            print "case4: xxxx-xx-xx xx:xx:xx"
+            # print "case4: xxxx-xx-xx xx:xx:xx"
             year = match_ymd.group(1)
             month = match_ymd.group(2)
             day = match_ymd.group(3)
@@ -189,18 +189,17 @@ class WeiboParser(Parser):
         weibopost.content = "".join(strlist) # 微博内容
         time_string =  div.xpath("*//span[@class='ct']")[0].text
         weibopost.post_time = self.parseTime(time_string) # 微博发布时间
-        repost_list = self._getReposts(url)
+        repost_list = self._getReposts(self.weibo_url) # 此处传递的是不带参数的
         weibopost.repost_list = repost_list
         print weibopost.__dict__ 
         return weibopost
-    def _getReposts(self, url):
+    def _getReposts(self, weibo_url):
         """
 
         """
         global repost_list 
         repost_list = []
-        lastpage = self._getTotalPage(url)
-        print "lastpage: %d" % lastpage
+        lastpage = self._getTotalPage(weibo_url+"?"+self.gsid)
         i = lastpage
         j = 1
         while i != 0:
@@ -209,13 +208,12 @@ class WeiboParser(Parser):
                     self.popGsid()
                 except:
                     print "No more gsid!"
-            print "    j: %d" % j
-            full_url = "%s&page=%d" % (url,i)
+            print "    j: %d    i:%d" % (j,i)
+            full_url = "%s?%s&page=%d" % (weibo_url,self.gsid,i)
             print "full_url: %s" % full_url
-            one_page = self._parseRepost(full_url)
+            page_number, one_page = self._parseRepost(full_url)
             repost_list.extend(one_page)
-            lastpage = self._getTotalPage(url)
-            i = lastpage - j
+            i = page_number - j
             j += 1
         return repost_list
     def _getTotalPage(self, url):
@@ -227,6 +225,9 @@ class WeiboParser(Parser):
     def _parseRepost(self, url):
         reposts = []
         dom = self.url2Dom(url)
+        page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
+        # 注意，此处并未考虑转发不足一页的情况
+        page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
         divs = dom.xpath("//div[@class='c']")
         for i in range(0, len(divs)):
             nodes = divs[i].xpath("node()") # 一个nodes对应一行内容
@@ -265,7 +266,7 @@ class WeiboParser(Parser):
             time_string = re.compile(ur'(.*)\u6765.*').match(nodes[-1].text).group(1).strip()
             weibo_repost.time = self.parseTime(time_string) # 转发时间
             reposts.append(weibo_repost)
-        return reposts
+        return page_number, reposts
 
 if __name__ == "__main__":
     wp = WeiboParser("http://weibo.cn/repost/A6lkV07ci")
