@@ -78,7 +78,12 @@ class Parser(object):
     gsidstack = ["gsid=4um81d481ws9jVfW65fHRfNr36t",\
             "gsid=4ukd1d481tNHjEDK1cdd5fO7L2W",\
             "gsid=4u8p32bd1TPK1AXgrkUqT703C8g",\
-            "gsid=4u2g32bd14l1bYh2F0pMG9IF08T"]
+            "gsid=4u2g32bd14l1bYh2F0pMG9IF08T",\
+            "gsid=4uAE32bd1xCJhrVSl3HSVfOyUcU",\
+            "gsid=4up432bd1YQRUWIdjKzaNfOzh70",\
+            "gsid=4ucN32bd1ixLWJtnd3ajlfRRm5x",\
+            "gsid=4uVA7ef41UxFjVNCfTEOufRRp2V"
+            ]
     def popGsid(self):
         self.gsid = self.gsidstack.pop()
     def url2Dom(self, url):
@@ -171,7 +176,7 @@ class WeiboParser(Parser):
         weibopost = WeiboPost()
         url = "%s?%s" % (self.weibo_url, self.gsid)
         # 微博mid
-        weibopost.mid =  re.compile(r"\S*repost/(\S+)\?").match(url).group(1)
+        weibopost.mid =  re.compile(r"\S*\w+/(\S+)\?").match(url).group(1)
         dom = self.url2Dom(url)
         div = dom.xpath("//div[@id='M_']")[0] 
         user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
@@ -269,7 +274,7 @@ class WeiboParser(Parser):
         return page_number, reposts
 
 if __name__ == "__main__":
-    wp = WeiboParser("http://weibo.cn/repost/A6lkV07ci")
+    wp = WeiboParser("http://weibo.cn/comment/A5jMV1frc")
     global text_list
     text_list = []
     weibopost = wp.getWeiboPost()
