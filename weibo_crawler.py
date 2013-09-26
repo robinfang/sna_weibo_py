@@ -6,7 +6,8 @@ import re
 import lxml.html.soupparser as soupparser
 import datetime
 import time
-
+import json
+import codecs
 class User(object):
     """微博用户
     
@@ -46,7 +47,29 @@ class WeiboPost(object):
         self.user = user
         self.post_time = post_time
         self.content = content
-
+    def toJSON(self):
+        obj = {}
+        obj['mid'] = self.mid
+        obj['user_sname'] = self.user_sname
+        obj['user_url'] = self.user_url
+        obj['content'] = self.content
+        obj['repost_list'] = []
+        for j in self.repost_list:
+            rp = {}
+            rp['user_sname'] = j.user_sname
+            rp['user_url'] = j.user_url
+            rp['content'] = j.content
+            if hasattr(j,"from_user_sname"): 
+                rp['from_user_sname'] = j.from_user_sname
+                rp['from_user_url'] = j.from_user_url
+            rp['time'] =  j.time.strftime("%Y%m%d-%H%M")
+            obj['repost_list'].append(rp)
+        return obj
+    def saveJSON(self):
+        jstr = self.toJSON()
+        filename = "weibo/%s.json" % self.mid
+        with codecs.open(filename, mode = "w", encoding = 'utf-8') as f:
+            json.dump(jstr, f)
 class WeiboRepost(object):
     """一条微博回复。
     
@@ -82,11 +105,22 @@ class Parser(object):
             "gsid=4uAE32bd1xCJhrVSl3HSVfOyUcU",\
             "gsid=4up432bd1YQRUWIdjKzaNfOzh70",\
             "gsid=4ucN32bd1ixLWJtnd3ajlfRRm5x",\
-            "gsid=4uVA7ef41UxFjVNCfTEOufRRp2V"
+            "gsid=4uVA7ef41UxFjVNCfTEOufRRp2V",\
+            "gsid=4un632bd160jDyV25wbFmf8Qu01",\
+            "gsid=4uJr32bd1L2uQ2xzEhwFYfV3b07",\
+            "gsid=4uNl32bd1xXvVO17TtHcnfV3h86",\
+            "gsid=4urP32bd1q2mbPq45m58wf9YVfh",\
+            "gsid=4u8U32bd1TARFS6LWDhBaf8Qvec",\
+            "gsid=4ufT32bd1o0yXUtGhlTZhfUcM4S",\
+            "gsid=4uar32bd1VgX4Hg84LR2ifUcQdi",\
+            "gsid=4uOV32bd1h3r9ckdjJSf6fUWs4g"
             ]
     def popGsid(self):
         self.gsid = self.gsidstack.pop()
     def url2Dom(self, url):
+        proxy_handler = urllib2.ProxyHandler({"http":"http://localhost:8087"})
+        opener = urllib2.build_opener(proxy_handler)
+        urllib2.install_opener(opener)
         request = urllib2.Request(url, headers = self.HEADERS)
         data = urllib2.urlopen(request).read()
         dom = soupparser.fromstring(data)
@@ -274,7 +308,8 @@ class WeiboParser(Parser):
         return page_number, reposts
 
 if __name__ == "__main__":
-    wp = WeiboParser("http://weibo.cn/comment/A5jMV1frc")
+    wp = WeiboParser("http://weibo.cn/repost/AbdZUAPuT")
     global text_list
     text_list = []
     weibopost = wp.getWeiboPost()
+    weibopost.saveJSON()
