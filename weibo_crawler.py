@@ -118,7 +118,7 @@ class Parser(object):
     def popGsid(self):
         self.gsid = self.gsidstack.pop()
     def url2Dom(self, url):
-        proxy_handler = urllib2.ProxyHandler({"http":"http://localhost:8087"})
+        proxy_handler = urllib2.ProxyHandler({})
         opener = urllib2.build_opener(proxy_handler)
         urllib2.install_opener(opener)
         request = urllib2.Request(url, headers = self.HEADERS)
@@ -308,7 +308,7 @@ class WeiboParser(Parser):
         return page_number, reposts
 
 if __name__ == "__main__":
-    wp = WeiboParser("http://weibo.cn/repost/AbdZUAPuT")
+    wp = WeiboParser("http://weibo.cn/repost/AbZtR9AZS")
     global text_list
     text_list = []
     weibopost = wp.getWeiboPost()
