@@ -46,7 +46,8 @@ class WeiboPost(object):
         self.mid = mid
         self.user = user
         self.post_time = post_time
-        self.content = content
+        self.content = content 
+        self.repost_list = []
     def toJSON(self):
         obj = {}
         obj['mid'] = self.mid
@@ -70,6 +71,7 @@ class WeiboPost(object):
         filename = "weibo/%s.json" % self.mid
         with codecs.open(filename, mode = "w", encoding = 'utf-8') as f:
             json.dump(jstr, f)
+        print "saved: ",filename
 class WeiboRepost(object):
     """一条微博回复。
     
@@ -119,7 +121,7 @@ class Parser(object):
         self.gsid = self.gsidstack.pop(0)
         self.gsidstack.append(self.gsid)
     def url2Dom(self, url):
-        proxy_handler = urllib2.ProxyHandler({"http":"http://localhost:8118/"})
+        proxy_handler = urllib2.ProxyHandler({})
         opener = urllib2.build_opener(proxy_handler)
         urllib2.install_opener(opener)
         request = urllib2.Request(url, headers = self.HEADERS)
@@ -231,33 +233,36 @@ class WeiboParser(Parser):
         weibopost.content = "".join(strlist) # 微博内容
         time_string =  div.xpath("*//span[@class='ct']")[0].text
         weibopost.post_time = self.parseTime(time_string) # 微博发布时间
-        repost_list = self._getReposts(self.weibo_url) # 此处传递的是不带参数的
-        weibopost.repost_list = repost_list
-        print weibopost.__dict__ 
+        self._getReposts(self.weibo_url, weibopost.repost_list) # 此处传递的是不带参数的url
+        # print weibopost.__dict__ 
         return weibopost
-    def _getReposts(self, weibo_url):
+    def _getReposts(self, weibo_url, repost_list):
         """
 
         """
-        global repost_list 
-        repost_list = []
         lastpage = self._getTotalPage(weibo_url+"?"+self.gsid)
         i = lastpage
         j = 1
         while i != 0:
-            if j%200 == 0:
+            if j%400 == 0:
                 try: 
                     self.popGsid()
                 except:
                     print "No more gsid!"
             print "    j: %d    i:%d" % (j,i)
             full_url = "%s?%s&page=%d" % (weibo_url,self.gsid,i)
-            print "full_url: %s" % full_url
-            page_number, one_page = self._parseRepost(full_url)
-            repost_list.extend(one_page)
-            i = page_number - j
-            j += 1
-        return repost_list
+            #print "full_url: %s" % full_url
+            try:
+                page_number, one_page = self._parseRepost(full_url)
+            except Exception, e:
+                print "Exception: ", e
+                print "gsid:", self.gsid
+                # return
+                self.popGsid()
+            else:
+                repost_list.extend(one_page)
+                i = page_number - j
+                j += 1
     def _getTotalPage(self, url):
         dom = self.url2Dom(url)
         page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
@@ -311,27 +316,28 @@ class WeiboParser(Parser):
         return page_number, reposts
 
 if __name__ == "__main__":
-    midlist = ["xjjQaekFq",\
-                "yA8UkBdsO",\
-                "z0N8Eh6B6",\
-                "A0IkRDiRp",\
-                "Ab3932Gsn",\
-                "Ab3XMydHq",\
-                "Ab5wf0Rsg",\
-                "AbbigE2Wa",\
-                "AbcexCVM8",\
-                "AbmW7jWQq",\
-                "AbuDAz8yp",\
-                "Abx5Hdtqa",\
-                "Abz7Ikpc8",\
-                "AbE5eDPco",\
-                "AbF3R1eDF",\
-                "Ac5wo6LJ2",\
-                "Ac6tV74nm",\
-                "Adb6ydQsN",\
-                "Adg2lyipu",\
-                "Adwwab87J",\
-                "AdGJfAcsn",\
+    midlist = [
+                #"xjjQaekFq",\
+                #"yA8UkBdsO",\
+                #"z0N8Eh6B6",\
+                #"A0IkRDiRp",\
+                #"Ab3932Gsn",\
+                #"Ab3XMydHq",\
+                #"Ab5wf0Rsg",\
+                #"AbbigE2Wa",\
+                #"AbcexCVM8",\
+                #"AbmW7jWQq",\
+                #"AbuDAz8yp",\
+                #"Abx5Hdtqa",\
+                #"Abz7Ikpc8",\
+                #"AbE5eDPco",\
+                #"AbF3R1eDF",\
+                #"Ac5wo6LJ2",\
+                #"Ac6tV74nm",\
+                #"Adb6ydQsN",\
+                #"Adg2lyipu",\
+                #"Adwwab87J",\
+                #"AdGJfAcsn",\
                 "AdfMZv61a",\
                 "AdyvzEc60",\
                 "AdMAWhYLs",\
