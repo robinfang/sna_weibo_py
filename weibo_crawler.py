@@ -100,7 +100,7 @@ class Parser(object):
     gsid = ""
     gsidstack = ["gsid=4um81d481ws9jVfW65fHRfNr36t",\
             "gsid=4ukd1d481tNHjEDK1cdd5fO7L2W",\
-            "gsid=4u8p32bd1TPK1AXgrkUqT703C8g",\
+            "gsid=4uu913811EcLjrHUxH58X703C8g",\
             "gsid=4u2g32bd14l1bYh2F0pMG9IF08T",\
             "gsid=4uAE32bd1xCJhrVSl3HSVfOyUcU",\
             "gsid=4up432bd1YQRUWIdjKzaNfOzh70",\
@@ -116,14 +116,17 @@ class Parser(object):
             "gsid=4uOV32bd1h3r9ckdjJSf6fUWs4g"
             ]
     def popGsid(self):
-        self.gsid = self.gsidstack.pop()
+        self.gsid = self.gsidstack.pop(0)
+        self.gsidstack.append(self.gsid)
     def url2Dom(self, url):
-        proxy_handler = urllib2.ProxyHandler({})
+        proxy_handler = urllib2.ProxyHandler({"http":"http://localhost:8118/"})
         opener = urllib2.build_opener(proxy_handler)
         urllib2.install_opener(opener)
         request = urllib2.Request(url, headers = self.HEADERS)
-        data = urllib2.urlopen(request).read()
+        response = urllib2.urlopen(request)
+        data = response.read()
         dom = soupparser.fromstring(data)
+        response.close()
         return dom
     def parseTime(self, time_string):
         time_string_split = time_string.split()
@@ -242,7 +245,7 @@ class WeiboParser(Parser):
         i = lastpage
         j = 1
         while i != 0:
-            if i%200 == 0:
+            if j%200 == 0:
                 try: 
                     self.popGsid()
                 except:
@@ -276,8 +279,8 @@ class WeiboParser(Parser):
             elif nodes[-1].tag != 'span':
                 continue
             # 取得一行内容文本
-            a_line = "".join(divs[i].xpath("text()"))
-            text_list.append(a_line)
+            # a_line = "".join(divs[i].xpath("text()"))
+            # text_list.append(a_line)
             weibo_repost = WeiboRepost()
             full_url_string = "http://weibo.cn%s" % nodes[0].get('href')
             user_url = full_url_string.split("?")[0]
@@ -308,8 +311,38 @@ class WeiboParser(Parser):
         return page_number, reposts
 
 if __name__ == "__main__":
-    wp = WeiboParser("http://weibo.cn/repost/AbZtR9AZS")
-    global text_list
-    text_list = []
-    weibopost = wp.getWeiboPost()
-    weibopost.saveJSON()
+    midlist = ["xjjQaekFq",\
+                "yA8UkBdsO",\
+                "z0N8Eh6B6",\
+                "A0IkRDiRp",\
+                "Ab3932Gsn",\
+                "Ab3XMydHq",\
+                "Ab5wf0Rsg",\
+                "AbbigE2Wa",\
+                "AbcexCVM8",\
+                "AbmW7jWQq",\
+                "AbuDAz8yp",\
+                "Abx5Hdtqa",\
+                "Abz7Ikpc8",\
+                "AbE5eDPco",\
+                "AbF3R1eDF",\
+                "Ac5wo6LJ2",\
+                "Ac6tV74nm",\
+                "Adb6ydQsN",\
+                "Adg2lyipu",\
+                "Adwwab87J",\
+                "AdGJfAcsn",\
+                "AdfMZv61a",\
+                "AdyvzEc60",\
+                "AdMAWhYLs",\
+                "AdAce72kt",\
+                "AdpXow9pj"]
+    for j in midlist:
+        wp = WeiboParser("http://weibo.cn/repost/%s" % j)
+        weibopost = wp.getWeiboPost()
+        weibopost.saveJSON()
+    # wp = WeiboParser("http://weibo.cn/repost/AerZ9BKXm")
+    # global text_list
+    # text_list = []
+    # weibopost = wp.getWeiboPost()
+    # weibopost.saveJSON()
