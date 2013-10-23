@@ -338,11 +338,11 @@ if __name__ == "__main__":
                 #"Adg2lyipu",\
                 #"Adwwab87J",\
                 #"AdGJfAcsn",\
-                "AdfMZv61a",\
-                "AdyvzEc60",\
-                "AdMAWhYLs",\
-                "AdAce72kt",\
-                "AdpXow9pj"]
+                #"AdfMZv61a",\
+                #"AdyvzEc60",\
+                #"AdMAWhYLs",\
+                #"AdAce72kt",\
+                #"AdpXow9pj"]
     for j in midlist:
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         weibopost = wp.getWeiboPost()
