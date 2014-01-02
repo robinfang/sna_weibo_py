@@ -1,13 +1,14 @@
 #coding=utf-8
 import urllib2
 from lxml import etree
-from StringIO import StringIO
+#from StringIO import StringIO
 import re
 import lxml.html.soupparser as soupparser
 import datetime
 import time
 import json
 import codecs
+import os
 class User(object):
     """微博用户
     
@@ -54,6 +55,7 @@ class WeiboPost(object):
         obj['user_sname'] = self.user_sname
         obj['user_url'] = self.user_url
         obj['content'] = self.content
+        obj['time'] = self.post_time.strftime("%Y%m%d-%H%M")
         obj['repost_list'] = []
         for j in self.repost_list:
             rp = {}
@@ -68,7 +70,11 @@ class WeiboPost(object):
         return obj
     def saveJSON(self):
         jstr = self.toJSON()
-        filename = "weibo/%s.json" % self.mid
+        path = "weibo2"
+        if not os.path.exists(path):
+            os.makedirs(path)
+        filename = "%s/%s.json" % (path,self.mid)
+        
         with codecs.open(filename, mode = "w", encoding = 'utf-8') as f:
             json.dump(jstr, f)
         print "saved: ",filename
@@ -199,6 +205,11 @@ class UserParser(Parser):
         user.follower_number = int(followeru) # 用户粉丝数
         print user.__dict__
         return user 
+    def get_midlist(self):
+        midlist = []
+        url = "%s?%s" % (self.user_url, self.gsid)
+        dom = self.url2Dom(url)
+        return midlist
 
 class WeiboParser(Parser):
     """
@@ -284,8 +295,8 @@ class WeiboParser(Parser):
             elif nodes[-1].tag != 'span':
                 continue
             # 取得一行内容文本
-            # a_line = "".join(divs[i].xpath("text()"))
-            # text_list.append(a_line)
+            a_line = "".join(divs[i].xpath("text()"))
+            text_list.append(a_line)
             weibo_repost = WeiboRepost()
             full_url_string = "http://weibo.cn%s" % nodes[0].get('href')
             user_url = full_url_string.split("?")[0]
@@ -342,7 +353,11 @@ if __name__ == "__main__":
                 #"AdyvzEc60",\
                 #"AdMAWhYLs",\
                 #"AdAce72kt",\
-                #"AdpXow9pj"]
+                "AdpXow9pj"#,\
+                #"AhrkcwiJj"
+                ]
+    global text_list
+    text_list = []
     for j in midlist:
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         weibopost = wp.getWeiboPost()
