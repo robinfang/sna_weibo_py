@@ -9,6 +9,29 @@ import time
 import json
 import codecs
 import os
+import logging 
+
+# 创建一个logger 
+logger = logging.getLogger('mylogger') 
+logger.setLevel(logging.DEBUG) 
+   
+# 创建一个handler，用于写入日志文件 
+#fh = logging.FileHandler('test.log') 
+#fh.setLevel(logging.DEBUG) 
+   
+# 再创建一个handler，用于输出到控制台 
+ch = logging.StreamHandler() 
+ch.setLevel(logging.WARNING) 
+   
+# 定义handler的输出格式 
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s') 
+#fh.setFormatter(formatter) 
+ch.setFormatter(formatter) 
+   
+# 给logger添加handler 
+#logger.addHandler(fh) 
+logger.addHandler(ch) 
+
 class User(object):
     """微博用户
     
@@ -124,9 +147,12 @@ class Parser(object):
             "gsid=4uOV32bd1h3r9ckdjJSf6fUWs4g"
             ]
     def popGsid(self):
+        oldgsid = self.gsid
         self.gsid = self.gsidstack.pop(0)
         self.gsidstack.append(self.gsid)
-    def url2Dom(self, url):
+        logger.warning("gsid %s changed to %s", *(oldgsid, self.gsid))
+    def url2Dom(self, url, args=""):
+        url = "%s?%s&%s" % (url, self.gsid, args)# args = "page=1"
         proxy_handler = urllib2.ProxyHandler({})
         opener = urllib2.build_opener(proxy_handler)
         urllib2.install_opener(opener)
@@ -134,6 +160,7 @@ class Parser(object):
         response = urllib2.urlopen(request)
         data = response.read()
         dom = soupparser.fromstring(data)
+        logger.info("url2Dom parsed:%s", url)
         response.close()
         return dom
     def parseTime(self, time_string):
@@ -190,8 +217,6 @@ class UserParser(Parser):
         self.user_url = user_url
     def getUser(self):
         user = User()
-        url = "%s?%s" % (self.user_url, self.gsid)
-        print url
         dom = self.url2Dom(url)
         uidstr = dom.xpath("//div[@class='tip2']/a")[0].get('href')
         user.uid = uidstr.split('/')[1] #用户数字id
@@ -207,7 +232,7 @@ class UserParser(Parser):
         return user 
     def get_midlist(self):
         midlist = []
-        url = "%s?%s" % (self.user_url, self.gsid)
+        url = self.user_url
         dom = self.url2Dom(url)
         return midlist
 
@@ -220,15 +245,25 @@ class WeiboParser(Parser):
     def __init__(self, weibo_url):
         self.popGsid()
         self.weibo_url = weibo_url
+        print weibo_url
     def getWeiboPost(self):
         """解析
         """
         weibopost = WeiboPost()
-        url = "%s?%s" % (self.weibo_url, self.gsid)
+        url = self.weibo_url
         # 微博mid
-        weibopost.mid =  re.compile(r"\S*\w+/(\S+)\?").match(url).group(1)
-        dom = self.url2Dom(url)
-        div = dom.xpath("//div[@id='M_']")[0] 
+        weibopost.mid =  re.compile(r"htt\S*\w+/(\S+)").match(url).group(1)
+        flag = True
+        while flag == True:
+            dom = self.url2Dom(url)
+            try:
+                div = dom.xpath("//div[@id='M_']")[0] 
+            except Exception, e:
+                print "Exception: ", e
+                self.popGsid()
+            else:
+                flag = False
+            
         user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
         user_sname = div.xpath("*/a")[0].text
         weibopost.user_sname = user_sname # 微博发布者昵称
@@ -244,31 +279,23 @@ class WeiboParser(Parser):
         weibopost.content = "".join(strlist) # 微博内容
         time_string =  div.xpath("*//span[@class='ct']")[0].text
         weibopost.post_time = self.parseTime(time_string) # 微博发布时间
-        self._getReposts(self.weibo_url, weibopost.repost_list) # 此处传递的是不带参数的url
-        # print weibopost.__dict__ 
+        self._getReposts(self.weibo_url, weibopost.repost_list) # 
         return weibopost
     def _getReposts(self, weibo_url, repost_list):
         """
 
         """
-        lastpage = self._getTotalPage(weibo_url+"?"+self.gsid)
+        lastpage = self._getTotalPage(weibo_url)
         i = lastpage
         j = 1
         while i != 0:
+            logger.info("j: %d    i:%d", *(j, i))
             if j%400 == 0:
-                try: 
-                    self.popGsid()
-                except:
-                    print "No more gsid!"
-            print "    j: %d    i:%d" % (j,i)
-            full_url = "%s?%s&page=%d" % (weibo_url,self.gsid,i)
-            #print "full_url: %s" % full_url
+                self.popGsid()
             try:
-                page_number, one_page = self._parseRepost(full_url)
+                page_number, one_page = self._parseRepost(weibo_url, i)
             except Exception, e:
                 print "Exception: ", e
-                print "gsid:", self.gsid
-                # return
                 self.popGsid()
             else:
                 repost_list.extend(one_page)
@@ -280,9 +307,10 @@ class WeiboParser(Parser):
         # 注意，此处并未考虑转发不足一页的情况
         page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
         return page_number
-    def _parseRepost(self, url):
+    def _parseRepost(self, url, page):
         reposts = []
-        dom = self.url2Dom(url)
+        argstr = "page=%d" % page
+        dom = self.url2Dom(url, argstr)
         page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
         # 注意，此处并未考虑转发不足一页的情况
         page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
@@ -327,6 +355,8 @@ class WeiboParser(Parser):
         return page_number, reposts
 
 if __name__ == "__main__":
+    
+
     midlist = [
                 #"xjjQaekFq",\
                 #"yA8UkBdsO",\
@@ -345,16 +375,16 @@ if __name__ == "__main__":
                 #"AbF3R1eDF",\
                 #"Ac5wo6LJ2",\
                 #"Ac6tV74nm",\
-                #"Adb6ydQsN",\
-                #"Adg2lyipu",\
-                #"Adwwab87J",\
-                #"AdGJfAcsn",\
-                #"AdfMZv61a",\
-                #"AdyvzEc60",\
-                #"AdMAWhYLs",\
-                #"AdAce72kt",\
-                "AdpXow9pj"#,\
-                #"AhrkcwiJj"
+                "Adb6ydQsN",\
+                "Adg2lyipu",\
+                "Adwwab87J",\
+                "AdGJfAcsn",\
+                "AdfMZv61a",\
+                "AdyvzEc60",\
+                "AdMAWhYLs",\
+                "AdAce72kt",\
+                "AdpXow9pj",\
+                "AhrkcwiJj"
                 ]
     global text_list
     text_list = []
