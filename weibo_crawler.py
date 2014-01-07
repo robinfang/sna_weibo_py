@@ -9,6 +9,8 @@ import json
 import codecs
 import os
 import logging 
+from sets import Set
+
 
 # 创建一个logger 
 logger = logging.getLogger('mylogger') 
@@ -20,7 +22,7 @@ logger.setLevel(logging.DEBUG)
    
 # 再创建一个handler，用于输出到控制台 
 ch = logging.StreamHandler() 
-ch.setLevel(logging.WARNING) 
+ch.setLevel(logging.DEBUG) 
    
 # 定义handler的输出格式 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s') 
@@ -205,6 +207,12 @@ class Parser(object):
                     int(day),\
                     int(hour),int(minutes))
         return time
+    def _getTotalPage(self, url):
+        dom = self.url2Dom(url)
+        page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
+        # 注意，此处并未考虑转发不足一页的情况
+        page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
+        return page_number
 class UserParser(Parser):
     """
         
@@ -216,7 +224,7 @@ class UserParser(Parser):
         self.user_url = user_url
     def getUser(self):
         user = User()
-        dom = self.url2Dom(url)
+        dom = self.url2Dom(self.user_url)
         uidstr = dom.xpath("//div[@class='tip2']/a")[0].get('href')
         user.uid = uidstr.split('/')[1] #用户数字id
         f = dom.xpath("//div[@class='tip2']/a") 
@@ -229,12 +237,26 @@ class UserParser(Parser):
         user.follower_number = int(followeru) # 用户粉丝数
         print user.__dict__
         return user 
-    def get_midlist(self):
-        midlist = []
+    def get_midlist(self, page_limit):
+        midlist = []# 如果要去重，应该用Set结构
         url = self.user_url
-        dom = self.url2Dom(url)
+        #dom = self.url2Dom(url)
+        for j in range(1,page_limit+1):
+            self.get_mid(j, midlist)
         return midlist
-
+    def get_mid(self, j, midlist):
+        logger.info("get mid on page: %s", j)
+        args = "page=%d" % j
+        dom = self.url2Dom(self.user_url, args)
+        divs = dom.xpath("//div[@class='c']")
+        ori = []
+        fin = []
+        for i in range(0,len(divs)):
+            ori.extend(divs[i].xpath("@id"))
+        for i in ori:
+            fin.append(i.lstrip("M_"))
+        midlist.extend(fin)
+    
 class WeiboParser(Parser):
     """
     
@@ -300,12 +322,7 @@ class WeiboParser(Parser):
                 repost_list.extend(one_page)
                 i = page_number - j
                 j += 1
-    def _getTotalPage(self, url):
-        dom = self.url2Dom(url)
-        page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
-        # 注意，此处并未考虑转发不足一页的情况
-        page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
-        return page_number
+   
     def _parseRepost(self, url, page):
         reposts = []
         argstr = "page=%d" % page
@@ -353,8 +370,11 @@ class WeiboParser(Parser):
             reposts.append(weibo_repost)
         return page_number, reposts
 if __name__ == "__main__":
+    up = UserParser("http://weibo.cn/cctvcaijing")
+    midlist = up.get_midlist(10)
     
-
+    
+    """
     midlist = [
                 #"xjjQaekFq",\
                 #"yA8UkBdsO",\
@@ -373,23 +393,24 @@ if __name__ == "__main__":
                 #"AbF3R1eDF",\
                 #"Ac5wo6LJ2",\
                 #"Ac6tV74nm",\
-                "Adb6ydQsN",\
-                "Adg2lyipu",\
-                "Adwwab87J",\
-                "AdGJfAcsn",\
-                "AdfMZv61a",\
-                "AdyvzEc60",\
-                "AdMAWhYLs",\
-                "AdAce72kt",\
-                "AdpXow9pj",\
-                "AhrkcwiJj"
-                ]
+                #"Adb6ydQsN",\
+                #"Adg2lyipu",\
+                #"Adwwab87J",\
+                #"AdGJfAcsn",\
+                #"AdfMZv61a",\
+                #"AdyvzEc60",\
+                #"AdMAWhYLs",\
+                #"AdAce72kt",\
+                #"AdpXow9pj",\
+                #"AhrkcwiJj"
+                #]
     global text_list
     text_list = []
     for j in midlist:
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         weibopost = wp.getWeiboPost()
         weibopost.saveJSON()
+    """
     # wp = WeiboParser("http://weibo.cn/repost/AerZ9BKXm")
     # global text_list
     # text_list = []
