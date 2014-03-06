@@ -370,9 +370,20 @@ class WeiboParser(Parser):
             reposts.append(weibo_repost)
         return page_number, reposts
 if __name__ == "__main__":
+
+    f = open("prepare/100users_meiti.txt")
+    all_text = f.readlines()
+    f.close()
+    midlist = []
+    for j in all_text:
+        url = j.strip().split(",")[1]
+        logger.info("User url: %s", url)
+        up = UserParser("http://weibo.cn/cctvcaijing")
+        midlist.extend(up.get_midlist(10))
+    """
     up = UserParser("http://weibo.cn/cctvcaijing")
     midlist = up.get_midlist(10)
-    
+    """
     
     """
     midlist = [
