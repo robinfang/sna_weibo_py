@@ -94,7 +94,7 @@ class WeiboPost(object):
         return obj
     def saveJSON(self):
         jstr = self.toJSON()
-        path = "weibo2"
+        path = "weibo_3_7_test"
         if not os.path.exists(path):
             os.makedirs(path)
         filename = "%s/%s.json" % (path,self.mid)
@@ -370,7 +370,21 @@ class WeiboParser(Parser):
             reposts.append(weibo_repost)
         return page_number, reposts
 if __name__ == "__main__":
+    f = open("midlist","r")
+    midlist = []
+    contents = f.readlines()
+    for i in contents:
+        midlist.append(i.rstrip("\n"))
+    f.close()
+    global text_list
+    text_list = []
+    for j in midlist:
+        wp = WeiboParser("http://weibo.cn/repost/%s" % j)
+        weibopost = wp.getWeiboPost()
+        weibopost.saveJSON()
 
+
+    """
     f = open("prepare/100users_meiti.txt")
     all_text = f.readlines()
     f.close()
@@ -380,6 +394,12 @@ if __name__ == "__main__":
         logger.info("User url: %s", url)
         up = UserParser("http://weibo.cn/cctvcaijing")
         midlist.extend(up.get_midlist(10))
+    f.open("midlist","w")
+    for in in midlist:
+        f.write("%s\n" % i)
+    f.close()
+    """
+    
     """
     up = UserParser("http://weibo.cn/cctvcaijing")
     midlist = up.get_midlist(10)
