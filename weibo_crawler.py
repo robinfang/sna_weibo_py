@@ -379,6 +379,10 @@ if __name__ == "__main__":
     global text_list
     text_list = []
     for j in midlist:
+        filelist = os.listdir("weibo_3_7_test")
+        processed = [i.strip(".json") for i in listfile]
+        if j in processed:
+            continue
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         weibopost = wp.getWeiboPost()
         weibopost.saveJSON()
@@ -393,7 +397,7 @@ if __name__ == "__main__":
         url = j.strip().split(",")[1]
         logger.info("User url: %s", url)
         up = UserParser("http://weibo.cn/cctvcaijing")
-        midlist.extend(up.get_midlist(10))
+        midlist.extend(up.get_midlist(10)) # 取了10页
     f.open("midlist","w")
     for in in midlist:
         f.write("%s\n" % i)
