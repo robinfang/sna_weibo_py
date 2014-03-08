@@ -380,8 +380,9 @@ if __name__ == "__main__":
     text_list = []
     for j in midlist:
         filelist = os.listdir("weibo_3_7_test")
-        processed = [i.strip(".json") for i in listfile]
+        processed = [i.strip(".json") for i in filelist]
         if j in processed:
+            logger.info("passed %s" , j)
             continue
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         weibopost = wp.getWeiboPost()
