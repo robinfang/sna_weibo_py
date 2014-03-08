@@ -380,7 +380,7 @@ if __name__ == "__main__":
     text_list = []
     for j in midlist:
         filelist = os.listdir("weibo_3_7_test")
-        processed = [i.strip(".json") for i in filelist]
+        processed = [i[0:-5] for i in filelist]
         if j in processed:
             logger.info("passed %s" , j)
             continue
