@@ -383,7 +383,7 @@ if __name__ == "__main__":
     timeout = 20
     socket.setdefaulttimeout(timeout)
 
-    """
+    
     #通过文件中的mid抓取微博
     f = open("midlist","r")
     midlist = []
@@ -394,7 +394,7 @@ if __name__ == "__main__":
     global text_list
     text_list = []
     for j in midlist:
-        filelist = os.listdir("weibo_3_7_test")
+        filelist = os.listdir("weibo_3_9_test")
         processed = [i[0:-5] for i in filelist]
         if j in processed:
             logger.info("passed %s" , j)
@@ -402,11 +402,11 @@ if __name__ == "__main__":
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         weibopost = wp.getWeiboPost()
         weibopost.saveJSON()
-    """
-
-
-
     
+
+
+
+    """
     # 通过文件中的用户url抓取mid
     f = open("prepare/100users_meiti.txt")
     all_text = f.readlines()
@@ -421,7 +421,7 @@ if __name__ == "__main__":
     for i in midlist:
         outfile.write("%s\n" % i)
     outfile.close()
-    
+    """
     
     
     """
