@@ -407,7 +407,7 @@ if __name__ == "__main__":
         up = UserParser(url)
         midlist.extend(up.get_midlist(10)) # 取了10页
     f.open("midlist","w")
-    for in in midlist:
+    for i in midlist:
         f.write("%s\n" % i)
     f.close()
     
