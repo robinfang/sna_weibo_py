@@ -381,7 +381,8 @@ if __name__ == "__main__":
 
     timeout = 20
     socket.setdefaulttimeout(timeout)
-    global outpath = "weibo_3_9_test"
+    global outpath
+    outpath = "weibo_3_9_test"
     
     #通过文件中的mid抓取微博
     f = open("midlist","r")
