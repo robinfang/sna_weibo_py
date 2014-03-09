@@ -246,7 +246,7 @@ class UserParser(Parser):
         return midlist
     def get_mid(self, j, midlist):
         logger.info("get mid on page: %s", j)
-        args = "page=%d" % j
+        args = "page=%d&filter=1" % j # 将filter设为1，抓取原创微博
         dom = self.url2Dom(self.user_url, args)
         divs = dom.xpath("//div[@class='c']")
         ori = []
@@ -292,7 +292,7 @@ class WeiboParser(Parser):
         #userparser = UserParser(user_url)
         #weibopost.user = userparser.getUser() # 微博发布者
         weibopost.user_url = user_url #微博发布者链接
-        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath("node()")
+        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath("node()") # 微博内容抓取，此处需斟酌
         strlist = []
         for cj in contentlist:
             if isinstance(cj,(unicode,str)):
@@ -370,6 +370,10 @@ class WeiboParser(Parser):
             reposts.append(weibo_repost)
         return page_number, reposts
 if __name__ == "__main__":
+
+
+    """
+    #通过文件中的mid抓取微博
     f = open("midlist","r")
     midlist = []
     contents = f.readlines()
@@ -387,9 +391,12 @@ if __name__ == "__main__":
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         weibopost = wp.getWeiboPost()
         weibopost.saveJSON()
-
-
     """
+
+
+
+    
+    # 通过文件中的用户url抓取mid
     f = open("prepare/100users_meiti.txt")
     all_text = f.readlines()
     f.close()
@@ -397,13 +404,14 @@ if __name__ == "__main__":
     for j in all_text:
         url = j.strip().split(",")[1]
         logger.info("User url: %s", url)
-        up = UserParser("http://weibo.cn/cctvcaijing")
+        up = UserParser(url)
         midlist.extend(up.get_midlist(10)) # 取了10页
     f.open("midlist","w")
     for in in midlist:
         f.write("%s\n" % i)
     f.close()
-    """
+    
+    
     
     """
     up = UserParser("http://weibo.cn/cctvcaijing")
