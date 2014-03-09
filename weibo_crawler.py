@@ -95,10 +95,9 @@ class WeiboPost(object):
         return obj
     def saveJSON(self):
         jstr = self.toJSON()
-        path = "weibo_3_7_test"
-        if not os.path.exists(path):
-            os.makedirs(path)
-        filename = "%s/%s.json" % (path,self.mid)
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
+        filename = "%s/%s.json" % (outpath,self.mid)
         
         with codecs.open(filename, mode = "w", encoding = 'utf-8') as f:
             json.dump(jstr, f)
@@ -382,7 +381,7 @@ if __name__ == "__main__":
 
     timeout = 20
     socket.setdefaulttimeout(timeout)
-
+    global outpath = "weibo_3_9_test"
     
     #通过文件中的mid抓取微博
     f = open("midlist","r")
@@ -394,7 +393,7 @@ if __name__ == "__main__":
     global text_list
     text_list = []
     for j in midlist:
-        filelist = os.listdir("weibo_3_9_test")
+        filelist = os.listdir(outpath)
         processed = [i[0:-5] for i in filelist]
         if j in processed:
             logger.info("passed %s" , j)
