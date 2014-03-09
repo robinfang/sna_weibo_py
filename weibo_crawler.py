@@ -9,6 +9,7 @@ import json
 import codecs
 import os
 import logging 
+import socket
 from sets import Set
 
 
@@ -241,8 +242,16 @@ class UserParser(Parser):
         midlist = []# 如果要去重，应该用Set结构
         url = self.user_url
         #dom = self.url2Dom(url)
-        for j in range(1,page_limit+1):
-            self.get_mid(j, midlist)
+        j = 1
+        while j < page_limit+1:
+            try:
+                self.get_mid(j, midlist)
+            except Exception, e:
+                print "Exception: ", e
+                self.popGsid()
+            else:
+                j += 1
+            time.sleep(0.5) # 为了避免错误，休眠
         return midlist
     def get_mid(self, j, midlist):
         logger.info("get mid on page: %s", j)
@@ -371,6 +380,8 @@ class WeiboParser(Parser):
         return page_number, reposts
 if __name__ == "__main__":
 
+    timeout = 20
+    socket.setdefaulttimeout(timeout)
 
     """
     #通过文件中的mid抓取微博
@@ -406,10 +417,10 @@ if __name__ == "__main__":
         logger.info("User url: %s", url)
         up = UserParser(url)
         midlist.extend(up.get_midlist(10)) # 取了10页
-    f.open("midlist","w")
+    outfile = open("midlist","w")
     for i in midlist:
-        f.write("%s\n" % i)
-    f.close()
+        outfile.write("%s\n" % i)
+    outfile.close()
     
     
     
