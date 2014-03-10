@@ -400,8 +400,14 @@ if __name__ == "__main__":
             logger.info("passed %s" , j)
             continue
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
-        weibopost = wp.getWeiboPost()
-        weibopost.saveJSON()
+        try:
+            weibopost = wp.getWeiboPost()
+        except Exception, e:
+            print "Exception: ", e
+            logger.warning("passed %s" , j)
+            continue
+        else:
+            weibopost.saveJSON()
     
 
 
