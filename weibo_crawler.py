@@ -207,7 +207,7 @@ class Parser(object):
                     int(day),\
                     int(hour),int(minutes))
         return time
-    def _getTotalPage(self, url):
+    def getTotalPage(self, url):
         dom = self.url2Dom(url)
         page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
         # 注意，此处并未考虑转发不足一页的情况
@@ -314,7 +314,7 @@ class WeiboParser(Parser):
         """
 
         """
-        lastpage = self._getTotalPage(weibo_url)
+        lastpage = self.getTotalPage(weibo_url)
         i = lastpage
         j = 1
         while i != 0:
@@ -401,6 +401,10 @@ if __name__ == "__main__":
             continue
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         try:
+            total_page=wp.getTotalPage(wp.weibo_url)
+            if total_page > 1000:
+                continue # 由于抓取能力有限，暂时不处理1000页以上转评的微博
+                logger.warning("passed %s for too many pages", j)
             weibopost = wp.getWeiboPost()
         except Exception, e:
             print "Exception: ", e
