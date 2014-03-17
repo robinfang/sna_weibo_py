@@ -153,7 +153,9 @@ class Parser(object):
         self.gsidstack.append(self.gsid)
         logger.warning("gsid %s changed to %s", *(oldgsid, self.gsid))
     def url2Dom(self, url, args=""):
+        
         url = "%s?%s&%s" % (url, self.gsid, args)# args = "page=1"
+        logger.info("url2Dom parsing: %s", url)
         proxy_handler = urllib2.ProxyHandler({})
         opener = urllib2.build_opener(proxy_handler)
         urllib2.install_opener(opener)
@@ -161,7 +163,7 @@ class Parser(object):
         response = urllib2.urlopen(request)
         data = response.read()
         dom = soupparser.fromstring(data)
-        logger.info("url2Dom parsed:%s", url)
+        
         response.close()
         return dom
     def parseTime(self, time_string):
@@ -246,7 +248,7 @@ class UserParser(Parser):
             try:
                 self.get_mid(j, midlist)
             except Exception, e:
-                print "Exception: ", e
+                logger.error("Exception: %s", e)
                 self.popGsid()
             else:
                 j += 1
@@ -288,7 +290,7 @@ class WeiboParser(Parser):
             try:
                 div = dom.xpath("//div[@id='M_']")[0] 
             except Exception, e:
-                print "Exception: ", e
+                logger.error("Exception: %s", e)
                 self.popGsid()
             else:
                 flag = False
@@ -324,7 +326,7 @@ class WeiboParser(Parser):
             try:
                 page_number, one_page = self._parseRepost(weibo_url, i)
             except Exception, e:
-                print "Exception: ", e
+                logger.error("Exception: %s", e)
                 self.popGsid()
             else:
                 repost_list.extend(one_page)
@@ -407,7 +409,7 @@ if __name__ == "__main__":
                 logger.warning("passed %s for too many pages", j)
             weibopost = wp.getWeiboPost()
         except Exception, e:
-            print "Exception: ", e
+            logger.error("Exception: %s", e)
             logger.warning("passed %s" , j)
             continue
         else:
