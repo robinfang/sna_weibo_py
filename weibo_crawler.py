@@ -65,7 +65,7 @@ class WeiboPost(object):
         post_time: 发布时间
         content: 字符串内容
         repost_list: WeiboReply回复列表
-        user_url: 转发者url
+        user_url: 发者url
         user_sname: 用户显示昵称
     """
     def __init__(self, mid = None, user = None, post_time = None, content = None):
@@ -84,6 +84,7 @@ class WeiboPost(object):
         obj['repost_list'] = []
         for j in self.repost_list:
             rp = {}
+            rp['repost_string'] = j.repost_string
             rp['user_sname'] = j.user_sname
             rp['user_url'] = j.user_url
             rp['content'] = j.content
@@ -108,12 +109,11 @@ class WeiboRepost(object):
     Attributes:
         content: 内容
         time: 时间
-        user: 转发者
-        from_user: 转发来源
-        user_url: 转发者链接
         from_user_url: 转发来源url
         user_sname: 转发用户昵称
+        user_url:
         from_user_sname: 来源用户昵称
+        repost_string：未处理的完整回复内容
     """
     def __init__(self, content = None, time = None, user = None, from_user = None):
         self.content = content
@@ -163,7 +163,6 @@ class Parser(object):
         response = urllib2.urlopen(request)
         data = response.read()
         dom = soupparser.fromstring(data)
-        
         response.close()
         return dom
     def parseTime(self, time_string):
@@ -302,12 +301,8 @@ class WeiboParser(Parser):
         #userparser = UserParser(user_url)
         #weibopost.user = userparser.getUser() # 微博发布者
         weibopost.user_url = user_url #微博发布者链接
-        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath("node()") # 微博内容抓取，此处需斟酌
-        strlist = []
-        for cj in contentlist:
-            if isinstance(cj,(unicode,str)):
-                strlist.append(cj)
-        weibopost.content = "".join(strlist) # 微博内容
+        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath("//text()") # 微博内容抓取，此处需斟酌
+        weibopost.content = "".join(contentlist) # 微博内容
         time_string =  div.xpath("*//span[@class='ct']")[0].text
         weibopost.post_time = self.parseTime(time_string) # 微博发布时间
         self._getReposts(self.weibo_url, weibopost.repost_list) 
@@ -349,9 +344,9 @@ class WeiboParser(Parser):
             elif nodes[-1].tag != 'span':
                 continue
             # 取得一行内容文本
-            a_line = "".join(divs[i].xpath("text()"))
-            text_list.append(a_line)
+            a_line = "".join(divs[i].xpath("//text()"))
             weibo_repost = WeiboRepost()
+            weibo_repost.repost_string = a_line
             full_url_string = "http://weibo.cn%s" % nodes[0].get('href')
             user_url = full_url_string.split("?")[0]
             weibo_repost.user_url = user_url # 转发者url
@@ -393,8 +388,7 @@ if __name__ == "__main__":
     for i in contents:
         midlist.append(i.rstrip("\n"))
     f.close()
-    global text_list
-    text_list = []
+    
     for j in midlist:
         filelist = os.listdir(outpath)
         processed = [i[0:-5] for i in filelist]
