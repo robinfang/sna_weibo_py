@@ -23,7 +23,7 @@ ch.setFormatter(formatter)
    
 # 给logger添加handler 
 logger.addHandler(fh) 
-logger.addHandler(ch) 
+#logger.addHandler(ch) 
 
 
 def parseWeibo(mid):
@@ -31,7 +31,7 @@ def parseWeibo(mid):
     filelist = os.listdir(outpath)
     processed = [i[0:-5] for i in filelist]
     if mid in processed:
-        logger.info("passed %s" , j)
+        logger.info("passed %s" , mid)
         return
     wp = WeiboParser("http://weibo.cn/repost/%s" % mid)
     try:
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     for i in contents:
         midlist.append(i.rstrip("\n"))
     file.close()
-    pool = ThreadPool(4) 
+    pool = ThreadPool(1) 
     pool.map(parseWeibo, midlist) 
     pool.close()
     pool.join()
