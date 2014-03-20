@@ -1,7 +1,6 @@
 #coding=utf-8
 import logging 
 from multiprocessing.dummy import Pool as ThreadPool 
-import MySQLdb
 import socket
 import os
 from weibo_crawler import *
@@ -54,15 +53,12 @@ if __name__ == "__main__":
     socket.setdefaulttimeout(timeout)
     global outpath
     outpath = "../weibo_3_20_test"
-    conn = MySQLdb.connect(host = '222.199.193.19', user = 'root', passwd = 'root', port=3306, db='sn_weibo')
-    cur = conn.cursor()
-    count = cur.execute("select distinct mid from mids")
-    logger.info("total number of mids: %s" % count)
-    results = cur.fetchall()
-    midlist = results
-    conn.commit()
-    cur.close()
-    conn.close()
+    file = open("midlist","r")
+    midlist = []
+    contents = file.readlines()
+    for i in contents:
+        midlist.append(i.rstrip("\n"))
+    file.close()
     pool = ThreadPool(4) 
     pool.map(parseWeibo, midlist) 
     pool.close()
