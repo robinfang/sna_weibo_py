@@ -95,6 +95,7 @@ class WeiboPost(object):
             obj['repost_list'].append(rp)
         return obj
     def saveJSON(self):
+        outpath = "../weibo_3_20_test"
         jstr = self.toJSON()
         if not os.path.exists(outpath):
             os.makedirs(outpath)
