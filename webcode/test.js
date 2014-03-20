@@ -43,11 +43,11 @@ function init(){
       //color, width and dimensions.
       Node: {
           dim: 5, //点的大小
-          color: "#f00"
+          color: "#1F77B4"
       },
       Edge: {
           lineWidth: 1,
-          color: "#088"
+          color: "#6ED5F8"
       },
       onBeforeCompute: function(node){
           Log.write("centering");
@@ -73,7 +73,7 @@ function init(){
           style.cursor = 'pointer';
           if (node._depth < 1) {
               style.fontSize = "2px";
-              style.color = "#ddd";
+              style.color = "black";
               style.display = 'inner'
 
           } else if(node._depth == 2){
