@@ -14,7 +14,7 @@ from sets import Set
 
 
 # 创建一个logger 
-logger = logging.getLogger('mylogger') 
+logger = logging.getLogger('weibo_crawler') 
 logger.setLevel(logging.DEBUG) 
    
 # 创建一个handler，用于写入日志文件 
@@ -302,7 +302,7 @@ class WeiboParser(Parser):
         #userparser = UserParser(user_url)
         #weibopost.user = userparser.getUser() # 微博发布者
         weibopost.user_url = user_url #微博发布者链接
-        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath("//text()") # 微博内容抓取，此处需斟酌
+        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath(".//text()") # 微博内容抓取，此处需斟酌
         weibopost.content = "".join(contentlist) # 微博内容
         time_string =  div.xpath("*//span[@class='ct']")[0].text
         weibopost.post_time = self.parseTime(time_string) # 微博发布时间
@@ -345,7 +345,7 @@ class WeiboParser(Parser):
             elif nodes[-1].tag != 'span':
                 continue
             # 取得一行内容文本
-            a_line = "".join(divs[i].xpath("//text()"))
+            a_line = "".join(divs[i].xpath(".//text()"))
             weibo_repost = WeiboRepost()
             weibo_repost.repost_string = a_line
             full_url_string = "http://weibo.cn%s" % nodes[0].get('href')
