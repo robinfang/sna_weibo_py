@@ -97,7 +97,7 @@ a {
 }
 
 #infovis {
- 
+    background-color: white;
     width:1000px;
     height:600px;
     margin:auto;
