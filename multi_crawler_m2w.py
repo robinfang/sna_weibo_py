@@ -22,8 +22,8 @@ fh.setFormatter(formatter)
 ch.setFormatter(formatter) 
    
 # 给logger添加handler 
-logger.addHandler(fh) 
-#logger.addHandler(ch) 
+#logger.addHandler(fh) 
+logger.addHandler(ch) 
 
 
 def parseWeibo(mid):
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     for i in contents:
         midlist.append(i.rstrip("\n"))
     file.close()
-    pool = ThreadPool(1) 
+    pool = ThreadPool(4) 
     pool.map(parseWeibo, midlist) 
     pool.close()
     pool.join()
