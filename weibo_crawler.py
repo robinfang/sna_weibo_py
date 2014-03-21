@@ -18,8 +18,8 @@ logger = logging.getLogger('weibo_crawler')
 logger.setLevel(logging.DEBUG) 
    
 # 创建一个handler，用于写入日志文件 
-#fh = logging.FileHandler('test.log') 
-#fh.setLevel(logging.DEBUG) 
+fh = logging.FileHandler('test.log') 
+fh.setLevel(logging.DEBUG) 
    
 # 再创建一个handler，用于输出到控制台 
 ch = logging.StreamHandler() 
@@ -27,11 +27,11 @@ ch.setLevel(logging.DEBUG)
    
 # 定义handler的输出格式 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s') 
-#fh.setFormatter(formatter) 
+fh.setFormatter(formatter) 
 ch.setFormatter(formatter) 
    
 # 给logger添加handler 
-#logger.addHandler(fh) 
+logger.addHandler(fh) 
 logger.addHandler(ch) 
 
 class User(object):
@@ -103,7 +103,7 @@ class WeiboPost(object):
         
         with codecs.open(filename, mode = "w", encoding = 'utf-8') as f:
             json.dump(jstr, f)
-        print "saved: ",filename
+        logger.info("saved: %s", filename)
 class WeiboRepost(object):
     """一条微博回复。
     
@@ -242,7 +242,6 @@ class UserParser(Parser):
     def get_midlist(self, page_limit):
         midlist = []# 如果要去重，应该用Set结构
         url = self.user_url
-        #dom = self.url2Dom(url)
         j = 1
         while j < page_limit+1:
             try:
@@ -276,7 +275,7 @@ class WeiboParser(Parser):
     def __init__(self, weibo_url):
         self.popGsid()
         self.weibo_url = weibo_url
-        print weibo_url
+        logger.info("init WeiboParser for url: %s", weibo_url) 
     def getWeiboPost(self):
         """解析
         """
@@ -298,7 +297,7 @@ class WeiboParser(Parser):
         user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
         user_sname = div.xpath("*/a")[0].text
         weibopost.user_sname = user_sname # 微博发布者昵称
-        print "user_url: %s" % user_url
+        #print "user_url: %s" % user_url
         #userparser = UserParser(user_url)
         #weibopost.user = userparser.getUser() # 微博发布者
         weibopost.user_url = user_url #微博发布者链接
@@ -380,7 +379,7 @@ if __name__ == "__main__":
     timeout = 20
     socket.setdefaulttimeout(timeout)
     global outpath
-    outpath = "weibo_3_9_test"
+    outpath = "../weibo_3_20_test"
     
     #通过文件中的mid抓取微博
     f = open("midlist","r")
@@ -399,8 +398,8 @@ if __name__ == "__main__":
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         try:
             total_page=wp.getTotalPage(wp.weibo_url)
-            if total_page > 1000:
-                continue # 由于抓取能力有限，暂时不处理1000页以上转评的微博
+            if total_page > 3000:
+                continue # 由于抓取能力有限，暂时不处理3000页以上转评的微博
                 logger.warning("passed %s for too many pages", j)
             weibopost = wp.getWeiboPost()
         except Exception, e:
