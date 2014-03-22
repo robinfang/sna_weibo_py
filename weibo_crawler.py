@@ -131,23 +131,32 @@ class Parser(object):
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
     gsid = ""
-    gsidstack = ["gsid=4um81d481ws9jVfW65fHRfNr36t",\
-            "gsid=4ukd1d481tNHjEDK1cdd5fO7L2W",\
-            "gsid=4uu913811EcLjrHUxH58X703C8g",\
-            "gsid=4u2g32bd14l1bYh2F0pMG9IF08T",\
-            "gsid=4uAE32bd1xCJhrVSl3HSVfOyUcU",\
-            "gsid=4up432bd1YQRUWIdjKzaNfOzh70",\
-            "gsid=4ucN32bd1ixLWJtnd3ajlfRRm5x",\
-            "gsid=4uVA7ef41UxFjVNCfTEOufRRp2V",\
-            "gsid=4un632bd160jDyV25wbFmf8Qu01",\
-            "gsid=4uJr32bd1L2uQ2xzEhwFYfV3b07",\
-            "gsid=4uNl32bd1xXvVO17TtHcnfV3h86",\
-            "gsid=4urP32bd1q2mbPq45m58wf9YVfh",\
-            "gsid=4u8U32bd1TARFS6LWDhBaf8Qvec",\
-            "gsid=4ufT32bd1o0yXUtGhlTZhfUcM4S",\
-            "gsid=4uar32bd1VgX4Hg84LR2ifUcQdi",\
-            "gsid=4uOV32bd1h3r9ckdjJSf6fUWs4g"
-            ]
+    gsidstack = [
+        "gsid=4ubJ52971LNmaiYcOV5GdfNr36t",\
+        "gsid=4urA52971PxaSOrKfzGuRfO7L2W",\
+        "gsid=4upQ529713UHdNmh53B2WfOyUcU",\
+        "gsid=4uJk201917rxYqNXKULdNfOzh70",\
+        "gsid=4uzx20191xU2kBTWOeotKfRRm5x",\
+        "gsid=4usQ20191yHvCSzEwVnM3fRRp2V",\
+        "gsid=4uA520191mPCY88mbEmmnf8Qu01",\
+        "gsid=4u2C20191euGoJQw9p6FhfV3b07",\
+        "gsid=4uRs20191mfyMSu2dNVdpfV3h86",\
+        "gsid=4u4r20191qXMqHb9E6IfDf9YVfh",\
+        "gsid=4u3c20191bDoB10FrtvYmf8Qvec",\
+        "gsid=4uAm20191UgnC3LyuITrhfUcM4S",\
+        "gsid=4uu420191hHH0lpj07RfEfUcQdi",\
+        "gsid=4uSL20191bI7zCqEIVw7tfUWs4g",\
+        "gsid=4u7e20191pQ4b0Hl3Z1fblgRicr",\
+        "gsid=4u0l20191gpNhTVGprQ26lgMeai",\
+        "gsid=4ufA2019148bPad7zmem7lgRj9z",\
+        "gsid=4uVZ20191vQdR7aYwmIIFlgMf3e",\
+        "gsid=4uxt20191DAWNxc9NAwkNlgMf9d",\
+        "gsid=4ujh20191edQb8jr6pdnMlgNo5b",\
+        "gsid=4uLf20191qhBaN23MnlddlgHC9I",\
+        "gsid=4uJR20191vFWifTk7Yii4lgHA0E",\
+        "gsid=4ust20191rltkvQlr5GPWlgHB0x",\
+        "gsid=4ubD20191LQzdHykR8E2NlgHD68"
+    ]
     def popGsid(self):
         oldgsid = self.gsid
         self.gsid = self.gsidstack.pop(0)
