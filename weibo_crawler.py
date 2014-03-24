@@ -10,7 +10,7 @@ import codecs
 import os
 import logging 
 import socket
-from sets import Set
+
 
 
 # 创建一个logger 
@@ -155,7 +155,12 @@ class Parser(object):
         "gsid=4uLf20191qhBaN23MnlddlgHC9I",\
         "gsid=4uJR20191vFWifTk7Yii4lgHA0E",\
         "gsid=4ust20191rltkvQlr5GPWlgHB0x",\
-        "gsid=4ubD20191LQzdHykR8E2NlgHD68"
+        "gsid=4ubD20191LQzdHykR8E2NlgHD68",\
+        "gsid=4urh20191EAYVKvxuHGeFljLV78",\
+        "gsid=4ux62019197i6Gvn2BRRxljM1fi",\
+        "gsid=4u8G20191S6yZvse2c4CxljYC19",\
+        "gsid=4uen2019197u7V6AisnfDljB3cJ",\
+        "gsid=4uZb201913vpBZoYAzmzlljB51W"
     ]
     def popGsid(self):
         oldgsid = self.gsid
