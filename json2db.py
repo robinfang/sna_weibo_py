@@ -44,7 +44,7 @@ def file2Db(filepath):
         repostlist= s["repost_list"]
         sqlstr = "insert ignore into user values(%s, %s)" 
         cur.execute(sqlstr, (username, userurl))
-        sqlstr2 = "insert into weibopost values(%s,%s,STR_TO_DATE(%s,'%%Y%%m%%d-%%H%%i'),%s)"
+        sqlstr2 = "insert ignore into weibopost values(%s,%s,STR_TO_DATE(%s,'%%Y%%m%%d-%%H%%i'),%s)"
         cur.execute(sqlstr2, (mid, content, time, userurl))  
         for item in repostlist:
             username = item["user_sname"]
@@ -70,7 +70,7 @@ def file2Db(filepath):
 
 if __name__ == "__main__":
 
-    path = "./weibo_3_20_test"
+    path = "../weibo_3_20_test"
     files = os.listdir(path)
     for i in files:
         filepath = "%s/%s" % (path, i)
