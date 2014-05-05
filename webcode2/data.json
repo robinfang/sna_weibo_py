@@ -1,0 +1,10 @@
+{
+"edges":[
+    {"source":"n2","target":"n1","id":"e0"}
+    ]
+,"nodes":[
+    {"id": "n1","label": "11111","x": 1,"y": 3,"size": 1},
+    {"id": "n2","label": "22222","x": 4,"y": 4,"size": 1}
+    ]
+
+}
