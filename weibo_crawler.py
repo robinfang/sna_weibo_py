@@ -9,26 +9,29 @@ import json
 import codecs
 import os
 import logging 
+import socket
+
+
 
 # 创建一个logger 
-logger = logging.getLogger('mylogger') 
+logger = logging.getLogger('weibo_crawler') 
 logger.setLevel(logging.DEBUG) 
    
 # 创建一个handler，用于写入日志文件 
-#fh = logging.FileHandler('test.log') 
-#fh.setLevel(logging.DEBUG) 
+fh = logging.FileHandler('test.log') 
+fh.setLevel(logging.DEBUG) 
    
 # 再创建一个handler，用于输出到控制台 
 ch = logging.StreamHandler() 
-ch.setLevel(logging.WARNING) 
+ch.setLevel(logging.DEBUG) 
    
 # 定义handler的输出格式 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s') 
-#fh.setFormatter(formatter) 
+fh.setFormatter(formatter) 
 ch.setFormatter(formatter) 
    
 # 给logger添加handler 
-#logger.addHandler(fh) 
+logger.addHandler(fh) 
 logger.addHandler(ch) 
 
 class User(object):
@@ -62,7 +65,7 @@ class WeiboPost(object):
         post_time: 发布时间
         content: 字符串内容
         repost_list: WeiboReply回复列表
-        user_url: 转发者url
+        user_url: 发者url
         user_sname: 用户显示昵称
     """
     def __init__(self, mid = None, user = None, post_time = None, content = None):
@@ -81,6 +84,7 @@ class WeiboPost(object):
         obj['repost_list'] = []
         for j in self.repost_list:
             rp = {}
+            rp['repost_string'] = j.repost_string
             rp['user_sname'] = j.user_sname
             rp['user_url'] = j.user_url
             rp['content'] = j.content
@@ -91,27 +95,26 @@ class WeiboPost(object):
             obj['repost_list'].append(rp)
         return obj
     def saveJSON(self):
+        outpath = "../weibo_3_20_test"
         jstr = self.toJSON()
-        path = "weibo2"
-        if not os.path.exists(path):
-            os.makedirs(path)
-        filename = "%s/%s.json" % (path,self.mid)
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
+        filename = "%s/%s.json" % (outpath,self.mid)
         
         with codecs.open(filename, mode = "w", encoding = 'utf-8') as f:
             json.dump(jstr, f)
-        print "saved: ",filename
+        logger.info("saved: %s", filename)
 class WeiboRepost(object):
     """一条微博回复。
     
     Attributes:
         content: 内容
         time: 时间
-        user: 转发者
-        from_user: 转发来源
-        user_url: 转发者链接
         from_user_url: 转发来源url
         user_sname: 转发用户昵称
+        user_url:
         from_user_sname: 来源用户昵称
+        repost_string：未处理的完整回复内容
     """
     def __init__(self, content = None, time = None, user = None, from_user = None):
         self.content = content
@@ -128,30 +131,46 @@ class Parser(object):
     """
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
     gsid = ""
-    gsidstack = ["gsid=4um81d481ws9jVfW65fHRfNr36t",\
-            "gsid=4ukd1d481tNHjEDK1cdd5fO7L2W",\
-            "gsid=4uu913811EcLjrHUxH58X703C8g",\
-            "gsid=4u2g32bd14l1bYh2F0pMG9IF08T",\
-            "gsid=4uAE32bd1xCJhrVSl3HSVfOyUcU",\
-            "gsid=4up432bd1YQRUWIdjKzaNfOzh70",\
-            "gsid=4ucN32bd1ixLWJtnd3ajlfRRm5x",\
-            "gsid=4uVA7ef41UxFjVNCfTEOufRRp2V",\
-            "gsid=4un632bd160jDyV25wbFmf8Qu01",\
-            "gsid=4uJr32bd1L2uQ2xzEhwFYfV3b07",\
-            "gsid=4uNl32bd1xXvVO17TtHcnfV3h86",\
-            "gsid=4urP32bd1q2mbPq45m58wf9YVfh",\
-            "gsid=4u8U32bd1TARFS6LWDhBaf8Qvec",\
-            "gsid=4ufT32bd1o0yXUtGhlTZhfUcM4S",\
-            "gsid=4uar32bd1VgX4Hg84LR2ifUcQdi",\
-            "gsid=4uOV32bd1h3r9ckdjJSf6fUWs4g"
-            ]
+    gsidstack = [
+        "gsid=4ubJ52971LNmaiYcOV5GdfNr36t",\
+        "gsid=4urA52971PxaSOrKfzGuRfO7L2W",\
+        "gsid=4upQ529713UHdNmh53B2WfOyUcU",\
+        "gsid=4uJk201917rxYqNXKULdNfOzh70",\
+        "gsid=4uzx20191xU2kBTWOeotKfRRm5x",\
+        "gsid=4usQ20191yHvCSzEwVnM3fRRp2V",\
+        "gsid=4uA520191mPCY88mbEmmnf8Qu01",\
+        "gsid=4u2C20191euGoJQw9p6FhfV3b07",\
+        "gsid=4uRs20191mfyMSu2dNVdpfV3h86",\
+        "gsid=4u4r20191qXMqHb9E6IfDf9YVfh",\
+        "gsid=4u3c20191bDoB10FrtvYmf8Qvec",\
+        "gsid=4uAm20191UgnC3LyuITrhfUcM4S",\
+        "gsid=4uu420191hHH0lpj07RfEfUcQdi",\
+        "gsid=4uSL20191bI7zCqEIVw7tfUWs4g",\
+        "gsid=4u7e20191pQ4b0Hl3Z1fblgRicr",\
+        "gsid=4u0l20191gpNhTVGprQ26lgMeai",\
+        "gsid=4ufA2019148bPad7zmem7lgRj9z",\
+        "gsid=4uVZ20191vQdR7aYwmIIFlgMf3e",\
+        "gsid=4uxt20191DAWNxc9NAwkNlgMf9d",\
+        "gsid=4ujh20191edQb8jr6pdnMlgNo5b",\
+        "gsid=4uLf20191qhBaN23MnlddlgHC9I",\
+        "gsid=4uJR20191vFWifTk7Yii4lgHA0E",\
+        "gsid=4ust20191rltkvQlr5GPWlgHB0x",\
+        "gsid=4ubD20191LQzdHykR8E2NlgHD68",\
+        "gsid=4urh20191EAYVKvxuHGeFljLV78",\
+        "gsid=4ux62019197i6Gvn2BRRxljM1fi",\
+        "gsid=4u8G20191S6yZvse2c4CxljYC19",\
+        "gsid=4uen2019197u7V6AisnfDljB3cJ",\
+        "gsid=4uZb201913vpBZoYAzmzlljB51W"
+    ]
     def popGsid(self):
         oldgsid = self.gsid
         self.gsid = self.gsidstack.pop(0)
         self.gsidstack.append(self.gsid)
         logger.warning("gsid %s changed to %s", *(oldgsid, self.gsid))
     def url2Dom(self, url, args=""):
+        
         url = "%s?%s&%s" % (url, self.gsid, args)# args = "page=1"
+        logger.info("url2Dom parsing: %s", url)
         proxy_handler = urllib2.ProxyHandler({})
         opener = urllib2.build_opener(proxy_handler)
         urllib2.install_opener(opener)
@@ -159,7 +178,6 @@ class Parser(object):
         response = urllib2.urlopen(request)
         data = response.read()
         dom = soupparser.fromstring(data)
-        logger.info("url2Dom parsed:%s", url)
         response.close()
         return dom
     def parseTime(self, time_string):
@@ -205,6 +223,12 @@ class Parser(object):
                     int(day),\
                     int(hour),int(minutes))
         return time
+    def getTotalPage(self, url):
+        dom = self.url2Dom(url)
+        page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
+        # 注意，此处并未考虑转发不足一页的情况
+        page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
+        return page_number
 class UserParser(Parser):
     """
         
@@ -216,7 +240,7 @@ class UserParser(Parser):
         self.user_url = user_url
     def getUser(self):
         user = User()
-        dom = self.url2Dom(url)
+        dom = self.url2Dom(self.user_url)
         uidstr = dom.xpath("//div[@class='tip2']/a")[0].get('href')
         user.uid = uidstr.split('/')[1] #用户数字id
         f = dom.xpath("//div[@class='tip2']/a") 
@@ -229,12 +253,33 @@ class UserParser(Parser):
         user.follower_number = int(followeru) # 用户粉丝数
         print user.__dict__
         return user 
-    def get_midlist(self):
-        midlist = []
+    def get_midlist(self, page_limit):
+        midlist = []# 如果要去重，应该用Set结构
         url = self.user_url
-        dom = self.url2Dom(url)
+        j = 1
+        while j < page_limit+1:
+            try:
+                self.get_mid(j, midlist)
+            except Exception, e:
+                logger.error("Exception: %s", e)
+                self.popGsid()
+            else:
+                j += 1
+            time.sleep(0.5) # 为了避免错误，休眠
         return midlist
-
+    def get_mid(self, j, midlist):
+        logger.info("get mid on page: %s", j)
+        args = "page=%d&filter=1" % j # 将filter设为1，抓取原创微博
+        dom = self.url2Dom(self.user_url, args)
+        divs = dom.xpath("//div[@class='c']")
+        ori = []
+        fin = []
+        for i in range(0,len(divs)):
+            ori.extend(divs[i].xpath("@id"))
+        for i in ori:
+            fin.append(i.lstrip("M_"))
+        midlist.extend(fin)
+    
 class WeiboParser(Parser):
     """
     
@@ -244,7 +289,7 @@ class WeiboParser(Parser):
     def __init__(self, weibo_url):
         self.popGsid()
         self.weibo_url = weibo_url
-        print weibo_url
+        logger.info("init WeiboParser for url: %s", weibo_url) 
     def getWeiboPost(self):
         """解析
         """
@@ -258,7 +303,7 @@ class WeiboParser(Parser):
             try:
                 div = dom.xpath("//div[@id='M_']")[0] 
             except Exception, e:
-                print "Exception: ", e
+                logger.error("Exception: %s", e)
                 self.popGsid()
             else:
                 flag = False
@@ -266,16 +311,12 @@ class WeiboParser(Parser):
         user_url = "http://weibo.cn%s" % div.xpath("*/a")[0].get("href").split("?")[0]
         user_sname = div.xpath("*/a")[0].text
         weibopost.user_sname = user_sname # 微博发布者昵称
-        print "user_url: %s" % user_url
+        #print "user_url: %s" % user_url
         #userparser = UserParser(user_url)
         #weibopost.user = userparser.getUser() # 微博发布者
         weibopost.user_url = user_url #微博发布者链接
-        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath("node()")
-        strlist = []
-        for cj in contentlist:
-            if isinstance(cj,(unicode,str)):
-                strlist.append(cj)
-        weibopost.content = "".join(strlist) # 微博内容
+        contentlist = div.xpath("*//span[@class='ctt']")[0].xpath(".//text()") # 微博内容抓取，此处需斟酌
+        weibopost.content = "".join(contentlist) # 微博内容
         time_string =  div.xpath("*//span[@class='ct']")[0].text
         weibopost.post_time = self.parseTime(time_string) # 微博发布时间
         self._getReposts(self.weibo_url, weibopost.repost_list) 
@@ -284,7 +325,7 @@ class WeiboParser(Parser):
         """
 
         """
-        lastpage = self._getTotalPage(weibo_url)
+        lastpage = self.getTotalPage(weibo_url)
         i = lastpage
         j = 1
         while i != 0:
@@ -294,18 +335,13 @@ class WeiboParser(Parser):
             try:
                 page_number, one_page = self._parseRepost(weibo_url, i)
             except Exception, e:
-                print "Exception: ", e
+                logger.error("Exception: %s", e)
                 self.popGsid()
             else:
                 repost_list.extend(one_page)
                 i = page_number - j
                 j += 1
-    def _getTotalPage(self, url):
-        dom = self.url2Dom(url)
-        page_string = dom.xpath("//*[@id='pagelist']/form/div/text()")[-1]
-        # 注意，此处并未考虑转发不足一页的情况
-        page_number = int(re.compile(r".*\d+/(\d+)").match(page_string).group(1)) # 匹配页码并转成int型
-        return page_number
+   
     def _parseRepost(self, url, page):
         reposts = []
         argstr = "page=%d" % page
@@ -322,9 +358,9 @@ class WeiboParser(Parser):
             elif nodes[-1].tag != 'span':
                 continue
             # 取得一行内容文本
-            a_line = "".join(divs[i].xpath("text()"))
-            text_list.append(a_line)
+            a_line = "".join(divs[i].xpath(".//text()"))
             weibo_repost = WeiboRepost()
+            weibo_repost.repost_string = a_line
             full_url_string = "http://weibo.cn%s" % nodes[0].get('href')
             user_url = full_url_string.split("?")[0]
             weibo_repost.user_url = user_url # 转发者url
@@ -353,8 +389,67 @@ class WeiboParser(Parser):
             reposts.append(weibo_repost)
         return page_number, reposts
 if __name__ == "__main__":
+
+    timeout = 20
+    socket.setdefaulttimeout(timeout)
+    global outpath
+    outpath = "../weibo_3_20_test"
+    
+    #通过文件中的mid抓取微博
+    f = open("midlist","r")
+    midlist = []
+    contents = f.readlines()
+    for i in contents:
+        midlist.append(i.rstrip("\n"))
+    f.close()
+    
+    for j in midlist:
+        filelist = os.listdir(outpath)
+        processed = [i[0:-5] for i in filelist]
+        if j in processed:
+            logger.info("passed %s" , j)
+            continue
+        wp = WeiboParser("http://weibo.cn/repost/%s" % j)
+        try:
+            total_page=wp.getTotalPage(wp.weibo_url)
+            if total_page > 3000:
+                continue # 由于抓取能力有限，暂时不处理3000页以上转评的微博
+                logger.warning("passed %s for too many pages", j)
+            weibopost = wp.getWeiboPost()
+        except Exception, e:
+            logger.error("Exception: %s", e)
+            logger.warning("passed %s" , j)
+            continue
+        else:
+            weibopost.saveJSON()
     
 
+
+
+    """
+    # 通过文件中的用户url抓取mid
+    f = open("prepare/100users_meiti.txt")
+    all_text = f.readlines()
+    f.close()
+    midlist = []
+    for j in all_text:
+        url = j.strip().split(",")[1]
+        logger.info("User url: %s", url)
+        up = UserParser(url)
+        midlist.extend(up.get_midlist(10)) # 取了10页
+    outfile = open("midlist","w")
+    for i in midlist:
+        outfile.write("%s\n" % i)
+    outfile.close()
+    """
+    
+    
+    """
+    up = UserParser("http://weibo.cn/cctvcaijing")
+    midlist = up.get_midlist(10)
+    """
+    
+    """
     midlist = [
                 #"xjjQaekFq",\
                 #"yA8UkBdsO",\
@@ -373,23 +468,24 @@ if __name__ == "__main__":
                 #"AbF3R1eDF",\
                 #"Ac5wo6LJ2",\
                 #"Ac6tV74nm",\
-                "Adb6ydQsN",\
-                "Adg2lyipu",\
-                "Adwwab87J",\
-                "AdGJfAcsn",\
-                "AdfMZv61a",\
-                "AdyvzEc60",\
-                "AdMAWhYLs",\
-                "AdAce72kt",\
-                "AdpXow9pj",\
-                "AhrkcwiJj"
-                ]
+                #"Adb6ydQsN",\
+                #"Adg2lyipu",\
+                #"Adwwab87J",\
+                #"AdGJfAcsn",\
+                #"AdfMZv61a",\
+                #"AdyvzEc60",\
+                #"AdMAWhYLs",\
+                #"AdAce72kt",\
+                #"AdpXow9pj",\
+                #"AhrkcwiJj"
+                #]
     global text_list
     text_list = []
     for j in midlist:
         wp = WeiboParser("http://weibo.cn/repost/%s" % j)
         weibopost = wp.getWeiboPost()
         weibopost.saveJSON()
+    """
     # wp = WeiboParser("http://weibo.cn/repost/AerZ9BKXm")
     # global text_list
     # text_list = []
