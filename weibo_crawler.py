@@ -132,35 +132,7 @@ class Parser(object):
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
     gsid = ""
     gsidstack = [
-        "gsid=4ubJ52971LNmaiYcOV5GdfNr36t",\
-        "gsid=4urA52971PxaSOrKfzGuRfO7L2W",\
-        "gsid=4upQ529713UHdNmh53B2WfOyUcU",\
-        "gsid=4uJk201917rxYqNXKULdNfOzh70",\
-        "gsid=4uzx20191xU2kBTWOeotKfRRm5x",\
-        "gsid=4usQ20191yHvCSzEwVnM3fRRp2V",\
-        "gsid=4uA520191mPCY88mbEmmnf8Qu01",\
-        "gsid=4u2C20191euGoJQw9p6FhfV3b07",\
-        "gsid=4uRs20191mfyMSu2dNVdpfV3h86",\
-        "gsid=4u4r20191qXMqHb9E6IfDf9YVfh",\
-        "gsid=4u3c20191bDoB10FrtvYmf8Qvec",\
-        "gsid=4uAm20191UgnC3LyuITrhfUcM4S",\
-        "gsid=4uu420191hHH0lpj07RfEfUcQdi",\
-        "gsid=4uSL20191bI7zCqEIVw7tfUWs4g",\
-        "gsid=4u7e20191pQ4b0Hl3Z1fblgRicr",\
-        "gsid=4u0l20191gpNhTVGprQ26lgMeai",\
-        "gsid=4ufA2019148bPad7zmem7lgRj9z",\
-        "gsid=4uVZ20191vQdR7aYwmIIFlgMf3e",\
-        "gsid=4uxt20191DAWNxc9NAwkNlgMf9d",\
-        "gsid=4ujh20191edQb8jr6pdnMlgNo5b",\
-        "gsid=4uLf20191qhBaN23MnlddlgHC9I",\
-        "gsid=4uJR20191vFWifTk7Yii4lgHA0E",\
-        "gsid=4ust20191rltkvQlr5GPWlgHB0x",\
-        "gsid=4ubD20191LQzdHykR8E2NlgHD68",\
-        "gsid=4urh20191EAYVKvxuHGeFljLV78",\
-        "gsid=4ux62019197i6Gvn2BRRxljM1fi",\
-        "gsid=4u8G20191S6yZvse2c4CxljYC19",\
-        "gsid=4uen2019197u7V6AisnfDljB3cJ",\
-        "gsid=4uZb201913vpBZoYAzmzlljB51W"
+        
     ]
     def popGsid(self):
         oldgsid = self.gsid
