@@ -95,7 +95,7 @@ class WeiboPost(object):
             obj['repost_list'].append(rp)
         return obj
     def saveJSON(self):
-        outpath = "../weibo_3_20_test"
+        outpath = "../weibo_demo"
         jstr = self.toJSON()
         if not os.path.exists(outpath):
             os.makedirs(outpath)
@@ -132,7 +132,8 @@ class Parser(object):
     HEADERS = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; rv:21.0) Gecko/20100101 Firefox/21.0"}
     gsid = ""
     gsidstack = [
-        
+        "4uen2019197u7V6AisnfDljB3cJ",\
+        "4uZb201913vpBZoYAzmzlljB51W"
     ]
     def popGsid(self):
         oldgsid = self.gsid
@@ -140,11 +141,11 @@ class Parser(object):
         self.gsidstack.append(self.gsid)
         logger.warning("gsid %s changed to %s", *(oldgsid, self.gsid))
     def url2Dom(self, url, args=""):
-        
-        url = "%s?%s&%s" % (url, self.gsid, args)# args = "page=1"
+        url = "%s?%s" % (url, args)# args = "page=1"
         logger.info("url2Dom parsing: %s", url)
         proxy_handler = urllib2.ProxyHandler({})
         opener = urllib2.build_opener(proxy_handler)
+        opener.addheaders.append(('Cookie','gsid_CTandWM=' + self.gsid))
         urllib2.install_opener(opener)
         request = urllib2.Request(url, headers = self.HEADERS)
         response = urllib2.urlopen(request)
@@ -365,7 +366,7 @@ if __name__ == "__main__":
     timeout = 20
     socket.setdefaulttimeout(timeout)
     global outpath
-    outpath = "../weibo_3_20_test"
+    outpath = "../weibo_demo"
     
     #通过文件中的mid抓取微博
     f = open("midlist","r")
