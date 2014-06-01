@@ -132,7 +132,9 @@ class Parser(object):
     gsidstack = [
         "4uen2019197u7V6AisnfDljB3cJ",\
         "4uZb201913vpBZoYAzmzlljB51W"
-    ] # gsid循环队列
+    ] # gsid循环队列，移到配置文件
+    def __init__(self, gsidstack):
+        self.gsidstack = gsidstack
     def popGsid(self):
         oldgsid = self.gsid
         self.gsid = self.gsidstack.pop(0)
@@ -206,7 +208,8 @@ class UserParser(Parser):
     Attributes:
         user_url: 用户链接
     """
-    def __init__(self, user_url):
+    def __init__(self, gsidstack, user_url):
+        Parser.__init__(self, gsidstack)
         self.popGsid()
         self.user_url = user_url
     def getUser(self):
@@ -291,7 +294,8 @@ class WeiboParser(Parser):
     Attributes： 
         weibo_url: 链接
     """
-    def __init__(self, weibo_url):
+    def __init__(self, gsidstack, weibo_url):
+        Parser.__init__(self, gsidstack)
         self.popGsid()
         self.weibo_url = weibo_url
         logger.info("init WeiboParser for url: %s", weibo_url) 
@@ -402,6 +406,7 @@ if __name__ == "__main__":
     #通过文件中的mid抓取微博
     midlistpath = yamlconfig["input"]["midlist"]
     outpath = yamlconfig["output"]["weibodir"]
+    gsidstack = yamlconfig["input"]["gsidstack"]
     f = open(midlistpath,"r")
     midlist = []
     contents = f.readlines()

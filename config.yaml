@@ -1,0 +1,8 @@
+output:
+    weibodir: ../outpath
+input:
+    midlist: ./midlist
+    userdir: ./prepare
+    gsidstack:
+    - 4uen2019197u7V6AisnfDljB3cJ
+    - 4uZb201913vpBZoYAzmzlljB51W
