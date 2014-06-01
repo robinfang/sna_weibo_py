@@ -28,7 +28,6 @@ logger.addHandler(fh)
 logger.addHandler(ch) 
 
 
-path = "prepare"
 
 def getMid(filepath):
     print "getMid"
@@ -39,8 +38,10 @@ def getMid(filepath):
         url = j.strip().split(",")[1]
         logger.info("User url: %s", url)
         up = UserParser(url)
-        midlist = []
-        midlist = up.get_midlist(20) # 每个用户取10页
+        weibolist = []
+        #midlist = up.get_midlist(20) # 每个用户取前多少页
+        
+        """
         try:
             conn = MySQLdb.connect(host = 'localhost', user = 'root', passwd = '', port=3306, db='sn_weibo')
             cur = conn.cursor()    
@@ -51,7 +52,12 @@ def getMid(filepath):
             logger.error("Exception: %s", e)
         else:
             logger.info("SQL writed %s" % filepath)
+         """
 if __name__ == "__main__":
+    f = open("config.yaml")
+    yamlconfig  = yaml.load(f) # 配置文件
+    f.close()
+    path = yamlconfig["input"]["userdir"]
     timeout = 20
     socket.setdefaulttimeout(timeout)
     filelist = []

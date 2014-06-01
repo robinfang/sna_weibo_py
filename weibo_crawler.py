@@ -10,7 +10,7 @@ import codecs
 import os
 import logging 
 import socket
-
+import yaml
 
 
 # 创建一个logger 
@@ -94,16 +94,14 @@ class WeiboPost(object):
             rp['time'] =  j.time.strftime("%Y%m%d-%H%M")
             obj['repost_list'].append(rp)
         return obj
-    def saveJSON(self):
-        outpath = "../weibo_demo"
+    def saveJSON(self,outpath):
         jstr = self.toJSON()
         if not os.path.exists(outpath):
             os.makedirs(outpath)
         filename = "%s/%s.json" % (outpath,self.mid)
-        
         with codecs.open(filename, mode = "w", encoding = 'utf-8') as f:
             json.dump(jstr, f)
-        logger.info("saved: %s", filename)
+        logger.info("saved %s to %s" % (filename, outpath))
 class WeiboRepost(object):
     """一条微博回复。
     
@@ -134,7 +132,7 @@ class Parser(object):
     gsidstack = [
         "4uen2019197u7V6AisnfDljB3cJ",\
         "4uZb201913vpBZoYAzmzlljB51W"
-    ]
+    ] # gsid循环队列
     def popGsid(self):
         oldgsid = self.gsid
         self.gsid = self.gsidstack.pop(0)
@@ -226,6 +224,40 @@ class UserParser(Parser):
         user.follower_number = int(followeru) # 用户粉丝数
         print user.__dict__
         return user 
+        
+    def get_weibolist(self, page_limit):
+        weibolist = []
+        url = self.user_url
+        j = 1
+        while j < page_limit+1:
+            try:
+                self.get_weibo(j, weibolist)
+            except Exception, e:
+                logger.error("Exception: %s", e)
+                self.popGsid()
+            else:
+                j += 1
+                time.sleep(5)
+        return weibolist
+    
+    def get_weibo(self, j, weibolist):
+        logger.info("get weibo on page: %s", j)
+        args = "page=%d" % j # 不设filter
+        dom = self.url2Dom(self.user_url, args)
+        divs = dom.xpath("//div[@class='c']")
+        weibo = {}
+        l = []
+        for i in divs:
+            if id in i.attrib.keys():
+                continue
+             else: 
+                 # 取得 内容 时间 评论数 转发数 发布来源等
+                 weibo["content"] = "".join(i.xpath(".//text()")).replace(u'\xa0','') 
+                 
+                 l.append(weibo)
+        weibolist.extend(l)
+    
+    
     def get_midlist(self, page_limit):
         midlist = []# 如果要去重，应该用Set结构
         url = self.user_url
@@ -362,14 +394,15 @@ class WeiboParser(Parser):
             reposts.append(weibo_repost)
         return page_number, reposts
 if __name__ == "__main__":
-
+    f = open("config.yaml")
+    yamlconfig  = yaml.load(f) # 配置文件
+    f.close()
     timeout = 20
     socket.setdefaulttimeout(timeout)
-    global outpath
-    outpath = "../weibo_demo"
-    
     #通过文件中的mid抓取微博
-    f = open("midlist","r")
+    midlistpath = yamlconfig["input"]["midlist"]
+    outpath = yamlconfig["output"]["weibodir"]
+    f = open(midlistpath,"r")
     midlist = []
     contents = f.readlines()
     for i in contents:
@@ -394,7 +427,7 @@ if __name__ == "__main__":
             logger.warning("passed %s" , j)
             continue
         else:
-            weibopost.saveJSON()
+            weibopost.saveJSON(outpath)
     
 
 
