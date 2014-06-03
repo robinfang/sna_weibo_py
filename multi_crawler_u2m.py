@@ -30,7 +30,7 @@ logger.addHandler(ch)
 
 
 def getMid(filepath):
-    print "getMid"
+    logger.info("calling getMid")
     file = open(filepath)
     all_text = file.readlines()
     file.close()
@@ -39,6 +39,7 @@ def getMid(filepath):
         logger.info("User url: %s", url)
         up = UserParser(url)
         weibolist = []
+        weibolist = up.get_weibolist(1)
         #midlist = up.get_midlist(20) # 每个用户取前多少页
         
         """

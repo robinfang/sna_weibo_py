@@ -4,14 +4,14 @@ from lxml import etree
 import re
 import lxml.html.soupparser as soupparser
 import datetime
-import time
 import json
 import codecs
 import os
 import logging 
 import socket
 import yaml
-
+import sbase62 as sb
+import calendar
 
 # 创建一个logger 
 logger = logging.getLogger('weibo_crawler') 
@@ -250,16 +250,35 @@ class UserParser(Parser):
         divs = dom.xpath("//div[@class='c']")
         weibo = {}
         l = []
+        # return dom
         for i in divs:
-            if id in i.attrib.keys():
-                continue
-             else: 
-                 # 取得 内容 时间 评论数 转发数 发布来源等
-                 weibo["content"] = "".join(i.xpath(".//text()")).replace(u'\xa0','') 
+            if not "id" in i.attrib.keys():
+                continue # 标签没有id这一属性则跳过
+            else:
+                 mid = i.attrib["id"].lstrip("M_") # 字符
+                 id = sb.url_to_mid(mid) # 转为数字形式的mid
                  
+                 
+                 userid = # 数字形式用户id
+                 nickname = # 用户昵称
+                 
+                 
+                 # 取得 内容 时间 评论数 转发数 发布来源等
+                 content = "".join(i.xpath(".//span[@class='ctt']//text()")) # 只有微博内容
+                 str_line = "".join(i.xpath(".//text()")).replace(u'\xa0','') # 取得整个字符串后用正则匹配
+                 g = re.compile(u".*转发理由:(.*)赞\[").match(str_line)
+                 if not g is None:
+                    content = u"%s//转发微博:%s" % (g.group(1).strip(),content) # 前面加上转发理由
+                 g = re.compile(u".*转发\[(\d*)\]评论\[(\d*)\].*来自(.*)").match(str_line) # match不到会出错
+                 repost_count = g.group(1) # 转发数
+                 comment_count = g.group(2) # 评论数
+                 from_str = g.group(3) # 来源
+                 time_str = i.xpath(".//span[@class='ct']")[0].text.split()[0]
+                 time = self.parseTime(time_str)
+                 calendar.timegm(time.timetuple()) # 取得1970至今时间
                  l.append(weibo)
         weibolist.extend(l)
-    
+        
     
     def get_midlist(self, page_limit):
         midlist = []# 如果要去重，应该用Set结构
