@@ -1,35 +1,10 @@
 output:
     weibodir: ../outpath
+    simpleweibodir: ../simpleweibo
+    done: ./done.txt
 input:
     midlist: ./midlist
-    userdir: ./prepare
+    userdir: ./prepare1
     gsidstack:
-    - 4uen2019197u7V6AisnfDljB3cJ
-    - 4uZb201913vpBZoYAzmzlljB51W
-    - 4upQ529713UHdNmh53B2WfOyUcU
-    - 4uJk201917rxYqNXKULdNfOzh70
-    - 4uzx20191xU2kBTWOeotKfRRm5x
-    - 4usQ20191yHvCSzEwVnM3fRRp2V
-    - 4uA520191mPCY88mbEmmnf8Qu01
-    - 4u2C20191euGoJQw9p6FhfV3b07
-    - 4uRs20191mfyMSu2dNVdpfV3h86
-    - 4u4r20191qXMqHb9E6IfDf9YVfh
-    - 4u3c20191bDoB10FrtvYmf8Qvec
-    - 4uAm20191UgnC3LyuITrhfUcM4S
-    - 4uu420191hHH0lpj07RfEfUcQdi
-    - 4uSL20191bI7zCqEIVw7tfUWs4g
-    - 4u7e20191pQ4b0Hl3Z1fblgRicr
-    - 4u0l20191gpNhTVGprQ26lgMeai
-    - 4ufA2019148bPad7zmem7lgRj9z
-    - 4uVZ20191vQdR7aYwmIIFlgMf3e
-    - 4uxt20191DAWNxc9NAwkNlgMf9d
-    - 4ujh20191edQb8jr6pdnMlgNo5b
-    - 4uLf20191qhBaN23MnlddlgHC9I
-    - 4uJR20191vFWifTk7Yii4lgHA0E
-    - 4ust20191rltkvQlr5GPWlgHB0x
-    - 4ubD20191LQzdHykR8E2NlgHD68
-    - 4urh20191EAYVKvxuHGeFljLV78
-    - 4ux62019197i6Gvn2BRRxljM1fi
-    - 4u8G20191S6yZvse2c4CxljYC19
     - 4uen2019197u7V6AisnfDljB3cJ
     - 4uZb201913vpBZoYAzmzlljB51W
