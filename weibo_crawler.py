@@ -4,14 +4,15 @@ from lxml import etree
 import re
 import lxml.html.soupparser as soupparser
 import datetime
-import time
+import time as tm
 import json
 import codecs
 import os
 import logging 
 import socket
-
-
+import yaml
+import sbase62 as sb
+import calendar
 
 # 创建一个logger 
 logger = logging.getLogger('weibo_crawler') 
@@ -94,16 +95,14 @@ class WeiboPost(object):
             rp['time'] =  j.time.strftime("%Y%m%d-%H%M")
             obj['repost_list'].append(rp)
         return obj
-    def saveJSON(self):
-        outpath = "../weibo_demo"
+    def saveJSON(self,outpath):
         jstr = self.toJSON()
         if not os.path.exists(outpath):
             os.makedirs(outpath)
         filename = "%s/%s.json" % (outpath,self.mid)
-        
         with codecs.open(filename, mode = "w", encoding = 'utf-8') as f:
             json.dump(jstr, f)
-        logger.info("saved: %s", filename)
+        logger.info("saved %s to %s" % (filename, outpath))
 class WeiboRepost(object):
     """一条微博回复。
     
@@ -134,7 +133,9 @@ class Parser(object):
     gsidstack = [
         "4uen2019197u7V6AisnfDljB3cJ",\
         "4uZb201913vpBZoYAzmzlljB51W"
-    ]
+    ] # gsid循环队列，移到配置文件
+    def __init__(self, gsidstack):
+        self.gsidstack = gsidstack
     def popGsid(self):
         oldgsid = self.gsid
         self.gsid = self.gsidstack.pop(0)
@@ -155,6 +156,7 @@ class Parser(object):
         return dom
     def parseTime(self, time_string):
         time_string_split = time_string.split()
+        # logger.info(time_string)
         # print "time_string: %s" % time_string
         match_ymd = re.compile(ur'(\d{4})-(\d{2})-(\d{2})').match(time_string_split[0])
         if len(time_string_split) == 1:
@@ -162,7 +164,7 @@ class Parser(object):
             minutes = re.compile(ur'(.*)\u5206.*').match(time_string_split[0]).group(1) # 取得转发距现在过去了几分钟
             time = datetime.datetime.today()\
                 +datetime.timedelta(minutes = 0-int(minutes)) # 时间赋值
-        elif u'\u4eca\u5929' in time_string_split:
+        elif u'今天' in time_string_split:
             # print "case2: today xxx"
             time = time_string_split[1] # 取得转发时间HH:mm
             hour,minutes = time.split(":")
@@ -171,7 +173,7 @@ class Parser(object):
                 today.month,\
                 today.day,\
                 int(hour),int(minutes))
-        elif u'\u6708' in time_string_split[0] and u'\u65e5' in time_string_split[0]:
+        elif u'月' in time_string_split[0] and u'\u65e5' in time_string_split[0]:
             # print "case3: xx (Month) xx (Day)"
             date_string = time_string_split[0]
             match = re.compile(ur'(\d{2}).*(\d{2}).*').match(date_string)
@@ -207,8 +209,11 @@ class UserParser(Parser):
         
     Attributes:
         user_url: 用户链接
+        uid: 用户id
+        nickname: 用户昵称
     """
-    def __init__(self, user_url):
+    def __init__(self, gsidstack, user_url):
+        Parser.__init__(self, gsidstack)
         self.popGsid()
         self.user_url = user_url
     def getUser(self):
@@ -226,6 +231,70 @@ class UserParser(Parser):
         user.follower_number = int(followeru) # 用户粉丝数
         print user.__dict__
         return user 
+    def get_weibolist(self, page_limit):
+        weibolist = []
+        url = self.user_url
+        j = 1
+        while j < page_limit+1:
+            try:
+                self.get_weibo(j, weibolist)
+            except Exception, e:
+                logger.error("Exception: %s", e, exc_info=True)
+                self.popGsid()
+            else:
+                j += 1
+                tm.sleep(5)
+        return weibolist
+
+    def get_weibo(self, j, weibolist):
+        logger.info("get weibo on page: %s", j)
+        args = "page=%d" % j # 不设filter
+        dom = self.url2Dom(self.user_url, args)
+        divs = dom.xpath("//div[@class='c']")
+        l = []
+        # return dom
+        if j == 1:
+            nickname = dom.xpath("//div[@class='ut']/span[@class='ctt']")[0].text.split("[")[0]
+            uid = dom.xpath(u"//div[@class='ut']/a[text()='资料']")[0].get('href').lstrip("/").rstrip("/info")
+            self.nickname = nickname
+            self.uid = uid
+        else:
+            nickname = self.nickname 
+            uid = self.uid
+        for i in divs:
+            if not "id" in i.attrib.keys():
+                continue # 标签没有id这一属性则跳过
+            else:
+                mid = i.attrib["id"].lstrip("M_") # 字符
+                # logger.info("get mid: %s" % mid)
+                id = sb.url_to_mid(mid) # 转为数字形式的mid
+                # 取得 内容 时间 评论数 转发数 发布来源等
+                content = "".join(i.xpath(".//span[@class='ctt']//text()")) # 只有微博内容
+                str_line = "".join(i.xpath(".//text()")).replace(u'\xa0','') # 取得整个字符串后用正则匹配
+                g = re.compile(ur".*转发理由:(.*)赞\[").match(str_line)
+                if not g is None:
+                    content = u"%s//转发微博:%s" % (g.group(1).strip(),content) # 前面加上转发理由
+                g = re.compile(ur".*转发\[(\d*)\]评论\[(\d*)\].*来自(.*)").match(str_line) # match不到会出错
+                repost_count = g.group(1) # 转发数
+                comment_count = g.group(2) # 评论数
+                from_str = g.group(3) # 来源
+                time_str = i.xpath(".//span[@class='ct']")[0].text.split(u"来")[0]
+                # logger.info(time_str)
+                time = self.parseTime(time_str)
+                timestamp = calendar.timegm(time.timetuple()) # 取得1970至今时间
+                weibo = {}
+                weibo["id"] = id
+                weibo["name"] = uid
+                weibo["nick"] = nickname
+                weibo["repost"] = repost_count
+                weibo["comment"] = comment_count
+                weibo["from"] = from_str.replace(" ","")
+                weibo["timestamp"] = timestamp
+                weibo["content"] = content
+                l.append(weibo)
+        weibolist.extend(l)
+        
+    
     def get_midlist(self, page_limit):
         midlist = []# 如果要去重，应该用Set结构
         url = self.user_url
@@ -238,7 +307,7 @@ class UserParser(Parser):
                 self.popGsid()
             else:
                 j += 1
-            time.sleep(0.5) # 为了避免错误，休眠
+            tm.sleep(5) # 为了避免错误，休眠
         return midlist
     def get_mid(self, j, midlist):
         logger.info("get mid on page: %s", j)
@@ -259,7 +328,8 @@ class WeiboParser(Parser):
     Attributes： 
         weibo_url: 链接
     """
-    def __init__(self, weibo_url):
+    def __init__(self, gsidstack, weibo_url):
+        Parser.__init__(self, gsidstack)
         self.popGsid()
         self.weibo_url = weibo_url
         logger.info("init WeiboParser for url: %s", weibo_url) 
@@ -362,14 +432,16 @@ class WeiboParser(Parser):
             reposts.append(weibo_repost)
         return page_number, reposts
 if __name__ == "__main__":
-
+    f = open("config.yaml")
+    yamlconfig  = yaml.load(f) # 配置文件
+    f.close()
     timeout = 20
     socket.setdefaulttimeout(timeout)
-    global outpath
-    outpath = "../weibo_demo"
-    
     #通过文件中的mid抓取微博
-    f = open("midlist","r")
+    midlistpath = yamlconfig["input"]["midlist"]
+    outpath = yamlconfig["output"]["weibodir"]
+    gsidstack = yamlconfig["input"]["gsidstack"]
+    f = open(midlistpath,"r")
     midlist = []
     contents = f.readlines()
     for i in contents:
@@ -382,7 +454,7 @@ if __name__ == "__main__":
         if j in processed:
             logger.info("passed %s" , j)
             continue
-        wp = WeiboParser("http://weibo.cn/repost/%s" % j)
+        wp = WeiboParser(gsidstack, "http://weibo.cn/repost/%s" % j)
         try:
             total_page=wp.getTotalPage(wp.weibo_url)
             if total_page > 3000:
@@ -394,7 +466,7 @@ if __name__ == "__main__":
             logger.warning("passed %s" , j)
             continue
         else:
-            weibopost.saveJSON()
+            weibopost.saveJSON(outpath)
     
 
 

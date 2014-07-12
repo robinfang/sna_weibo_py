@@ -1,0 +1,10 @@
+output:
+    weibodir: ../outpath
+    simpleweibodir: ../simpleweibo
+    done: ./done.txt
+input:
+    midlist: ./midlist
+    userdir: ./prepare1
+    gsidstack:
+    - 4uen2019197u7V6AisnfDljB3cJ
+    - 4uZb201913vpBZoYAzmzlljB51W
