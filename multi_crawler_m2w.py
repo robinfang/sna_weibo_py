@@ -22,17 +22,21 @@ fh.setFormatter(formatter)
 ch.setFormatter(formatter) 
    
 # 给logger添加handler 
-#logger.addHandler(fh) 
+logger.addHandler(fh) 
 logger.addHandler(ch) 
 
 
+f = open("config.yaml")
+yamlconfig  = yaml.load(f) # 配置文件
+f.close()
+outpath =  yamlconfig["output"]["weibodir"]
+passed = yamlconfig["output"]["passed"]
+midlistpath = yamlconfig["input"]["midlist"] 
+gsidstack = yamlconfig["input"]["gsidstack"]
+
 def parseWeibo(mid):
     # 先判断mid是否处理过
-    processed = listJson(outpath)
-    if mid in processed:
-        logger.info("passed %s" , mid)
-        return
-    wp = WeiboParser("http://weibo.cn/repost/%s" % mid)
+    wp = WeiboParser(gsidstack, "http://weibo.cn/repost/%s" % mid)
     try:
         total_page = wp.getTotalPage(wp.weibo_url)
         if total_page > 3000:
@@ -46,9 +50,9 @@ def parseWeibo(mid):
         append2Pass(mid)
         return
     else:
-        weibopost.saveJSON()
+        weibopost.saveJSON(outpath)
 def append2Pass(mid):
-    file = open("passlist", "a")
+    file = open(passed, "a")
     file.write("%s\n" % mid)
     file.close()
         
@@ -60,23 +64,19 @@ def listJson(path):
 if __name__ == "__main__":
     timeout = 20
     socket.setdefaulttimeout(timeout)
-    global outpath
-    outpath = "../weibo_3_20_test"
-    processed = listJson(outpath) # 取得已经处理过的
-    
-    file = open("passlist","r")
-    contents = file.readlines()
-    for i in contents:
-        processed.append(i.rstrip("\n")) # 将已处理的和跳过的合并得到所有需要跳过的
-    file.close()
-    
-    file = open("midlist","r")
-    midlist = []
-    contents = file.readlines()
-    for i in contents:
-        midlist.append(i.rstrip("\n"))
-    file.close()
-    cleanlist = list(set(midlist).difference(set(processed))) # 待处理的和所有需要跳过的求差集
+    # global outpath
+    # outpath = "../weibo_test"
+    checkfile(passed)
+    checkdir(outpath)
+    processedlist = listJson(outpath) # 取得已经处理过的
+    f = open(passed,"r") # 取得跳过的
+    passedlist = f.read().splitlines() 
+    f.close()
+    processedlist.extend(passedlist) # 合并跳过的和已经处理过的
+    f = open(midlistpath,"r")
+    midlist = f.read().splitlines()
+    f.close()
+    cleanlist = list(set(midlist).difference(set(processedlist))) # 待处理的和所有需要跳过的求差集
     pool = ThreadPool(4) 
     pool.map(parseWeibo, cleanlist) 
     pool.close()

@@ -1,10 +1,11 @@
 output:
-    weibodir: ../outpath
-    simpleweibodir: ../simpleweibo
-    done: ./done.txt
+    weibodir: ../sna_weibo_py_out/outpath
+    simpleweibodir: ../sna_weibo_py_out/midlist
+    done: ../sna_weibo_py_out/done.txt
+    passed: ../sna_weibo_py_out/passedlist.txt
 input:
-    midlist: ./midlist
-    userdir: ./prepare1
+    midlist: ../sna_weibo_py_out/midlist.txt
+    userdir: ./prepare
     gsidstack:
     - 4uen2019197u7V6AisnfDljB3cJ
-    - 4uZb201913vpBZoYAzmzlljB51W
+    

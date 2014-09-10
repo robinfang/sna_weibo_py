@@ -3,7 +3,6 @@ from weibo_crawler import *
 import os
 import fnmatch
 import logging 
-import MySQLdb
 import codecs
 from multiprocessing.dummy import Pool as ThreadPool 
 
@@ -62,9 +61,22 @@ def getMid(filepath):
             logger.info("SQL writed %s" % filepath)
    
 """
+def getMid(user_url):
+    up = UserParser(gsidstack, user_url)
+    midlist = up.get_midlist(10)
+    filename="%s/weibo.%s" % (outpath, up.uid)
+    f = open(filename, "w")
+    f.write("\n".join(midlist))
+    logger.info("user %s done" % user_url)
+    f.close()
+    f = open(donelist, "a")
+    f.write(" ,%s\n" % user_url)
+    f.close()
+    
+
 def getWeibo(user_url):
     up = UserParser(gsidstack, user_url)
-    weibolist = up.get_weibolist(3)
+    weibolist = up.get_weibolist(10)
     filename ="%s/weibo.%s" % (outpath, up.uid)
     f =  codecs.open(filename, mode = "w", encoding = 'utf-8')
     for i in weibolist:
@@ -92,6 +104,8 @@ if __name__ == "__main__":
     socket.setdefaulttimeout(timeout)
     filelist = []
     files = os.listdir(path)
+    checkfile(donelist)
+    checkdir(outpath)
     for name in files:
         if fnmatch.fnmatch(name, "*.txt"):
             filelist.append(os.path.join(path, name))
@@ -102,8 +116,8 @@ if __name__ == "__main__":
     target_list = list(set(url_list).difference(set(done_list))) 
     logger.info("%d urls to be parsed.", len(target_list))
     #getWeibo(url_list[0])
-    pool = ThreadPool(2) 
-    pool.map(getWeibo, target_list) 
+    pool = ThreadPool(4) 
+    pool.map(getMid, target_list) 
     pool.close()
     pool.join()
     

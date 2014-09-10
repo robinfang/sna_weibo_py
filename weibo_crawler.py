@@ -35,6 +35,13 @@ ch.setFormatter(formatter)
 logger.addHandler(fh) 
 logger.addHandler(ch) 
 
+def checkdir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+def checkfile(file):
+    if not os.path.exists(file):
+        open(file, 'w').close()
+
 class User(object):
     """微博用户
     
@@ -243,7 +250,7 @@ class UserParser(Parser):
                 self.popGsid()
             else:
                 j += 1
-                tm.sleep(5)
+                tm.sleep(3)
         return weibolist
 
     def get_weibo(self, j, weibolist):
@@ -313,6 +320,8 @@ class UserParser(Parser):
         logger.info("get mid on page: %s", j)
         args = "page=%d&filter=1" % j # 将filter设为1，抓取原创微博
         dom = self.url2Dom(self.user_url, args)
+        if j==1:
+            self.uid = dom.xpath(u"//div[@class='ut']/a[text()='资料']")[0].get('href').lstrip("/").rstrip("/info")
         divs = dom.xpath("//div[@class='c']")
         ori = []
         fin = []
@@ -376,6 +385,7 @@ class WeiboParser(Parser):
             if j%400 == 0:
                 self.popGsid()
             try:
+                tm.sleep(2)
                 page_number, one_page = self._parseRepost(weibo_url, i)
             except Exception, e:
                 logger.error("Exception: %s", e)
@@ -438,15 +448,18 @@ if __name__ == "__main__":
     timeout = 20
     socket.setdefaulttimeout(timeout)
     #通过文件中的mid抓取微博
-    midlistpath = yamlconfig["input"]["midlist"]
-    outpath = yamlconfig["output"]["weibodir"]
+    midlistpath = yamlconfig["input"]["midlist"] 
+    outpath = yamlconfig["output"]["weibodir"] # 输出目录
     gsidstack = yamlconfig["input"]["gsidstack"]
+    
+    # 取得所有mid的list
     f = open(midlistpath,"r")
     midlist = []
     contents = f.readlines()
     for i in contents:
         midlist.append(i.rstrip("\n"))
     f.close()
+    
     
     for j in midlist:
         filelist = os.listdir(outpath)
