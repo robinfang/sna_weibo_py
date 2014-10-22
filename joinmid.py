@@ -1,7 +1,9 @@
 #coding=utf-8
 import os
 import sys
-
+import codecs
+reload(sys)
+sys.setdefaultencoding("utf-8")
 def getFileList(path):
     filelist = []
     files = os.listdir(path)
@@ -18,6 +20,5 @@ if __name__ == "__main__":
     midlist = []
     for j in filelist:
         midlist.extend(getMidList(j))
-    f = open(sys.argv[2],"w")
-    f.write("\n".join(midlist))
-    f.close()
+    with codecs.open(sys.argv[2], mode = "w", encoding = 'utf-8') as f:
+        f.write("\n".join(list(set(midlist)))+"\n")    
